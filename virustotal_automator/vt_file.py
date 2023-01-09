@@ -8,6 +8,7 @@ import time
 import os
 
 
+
 class VTFile(VTAutomator):
 
     def __init__(self, file: tuple['os.path', ...], vt_key: str, password: str = None, workers: int = 7):
