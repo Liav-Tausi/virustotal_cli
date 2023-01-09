@@ -5,6 +5,7 @@ class VTAutomatorError(Exception):
     pass
 
 
+
 class RequestFailed(VTAutomatorError):
     def __init__(self):
         super().__init__("Unable to fulfill request status over 400.")
