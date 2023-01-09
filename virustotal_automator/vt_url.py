@@ -70,6 +70,7 @@ class VTUrl(VTAutomator):
             else:
                 raise vt_exeptions.EmptyContentError()
 
+
     @VTAutomator.get_cache_url
     def get_url(self):
         rep: int = self['data']['attributes']['reputation']
