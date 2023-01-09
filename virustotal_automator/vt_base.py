@@ -1,5 +1,9 @@
+
 from datetime import timedelta, date, datetime
 from abc import ABC, abstractmethod
+from threading import Lock
+import functools
+import argparse
 import pytz
 import time
 
@@ -26,6 +30,9 @@ class VTAutomator(ABC):
             ref_cache_month = 1
         ref_date = date.today() + timedelta(weeks=4 * ref_cache_month)
         self.__ref_cache_month: date.month = ref_date.month
+
+        self.lock1 = Lock()
+        self.lock2 = Lock()
 
     # _____property_____ #
 
@@ -96,10 +103,12 @@ class VTAutomator(ABC):
     # _____setters_____#
 
     def set_amount_limit_counter(self) -> None:
-        self.__requests_amount_limit_counter += 1
+        with self.lock1:
+            self.__requests_amount_limit_counter += 1.
 
     def set_per_minute_limit_counter(self) -> None:
-        self.__requests_amount_limit_counter += 1
+        with self.lock2:
+            self.__requests_amount_limit_counter += 1
 
     def set_amount_limit_refresh(self) -> None:
         day = timedelta(hours=24)
@@ -112,10 +121,11 @@ class VTAutomator(ABC):
             time.sleep(60)
             self.__requests_amount_limit_counter = 0
 
-    # ______get_decorators______ #
+    # ______decorators______ #
 
     @staticmethod
     def get_cache_url(func):
+        @functools.wraps(func)
         def wrapper(*args):
 
             if args[0].url in args[0].cache_url_dict:
@@ -136,6 +146,7 @@ class VTAutomator(ABC):
 
     @staticmethod
     def get_cache_file(func):
+        @functools.wraps(func)
         def wrapper(*args):
 
             if args[0].file in args[0].cache_file_dict:
@@ -154,19 +165,3 @@ class VTAutomator(ABC):
 
         return wrapper
 
-    # _____post_decorators_____ #
-    @staticmethod
-    def post_cache_url(func):
-        def wrapper(*args):
-            args[0].cache_url_dict[args[0].url] = args[0]._post_req_url()
-            return func(args[0].cache_url_dict[args[0].url])
-
-        return wrapper
-
-    @staticmethod
-    def post_cache_file(func):
-        def wrapper(*args):
-            args[0].cache_file_dict[args[0].file] = args[0]._post_req_file(args[0].password)
-            return func(args[0].cache_file_dict[args[0].file])
-
-        return wrapper
