@@ -115,6 +115,7 @@ class VTFile(VTAutomator):
         else:
             raise FileNotFoundError()
 
+
     def post_get_file(self) -> int:
         self.post_file(self.password)
         for _ in range(10):
