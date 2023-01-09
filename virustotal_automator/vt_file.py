@@ -1,5 +1,4 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
 from vt_base import *
 import vt_exeptions
 import mimetypes
@@ -129,7 +128,8 @@ class VTFile(VTAutomator):
     def post_get_file(self, _file: str = None) -> tuple[str, int]:
         if _file is None:
             _file = self.file
-        self.post_file()
+        if self.file not in self.cache_file_dict:
+            self.post_file()
         for _ in range(10):
             res_code = self.get_file()
             if isinstance(res_code, int):
