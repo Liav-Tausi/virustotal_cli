@@ -6,6 +6,9 @@ import base64
 import time
 
 
+
+
+
 class VTUrl(VTAutomator):
 
     def __init__(self, url: tuple[str, ...], vt_key: str, workers: int = 7):
@@ -100,7 +103,8 @@ class VTUrl(VTAutomator):
     def post_get_url(self, _url: str = None) -> tuple[str, int]:
         if _url is None:
             _url = self.url
-        self.post_url()
+        if self.url not in self.cache_url_dict:
+            self.post_url()
         for _ in range(10):
             res_code = self.get_url()
             if isinstance(res_code, int):
@@ -116,9 +120,10 @@ class VTUrl(VTAutomator):
                 results.append(f.result())
         return results
 
-
     def _get_req_file(self):
         pass
 
     def _post_req_file(self):
         pass
+
+
