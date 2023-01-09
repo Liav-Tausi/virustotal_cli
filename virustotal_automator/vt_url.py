@@ -97,7 +97,9 @@ class VTUrl(VTAutomator):
         else:
             raise FileNotFoundError()
 
-    def _post_get_url(self, _url: str) -> tuple[str, int]:
+    def post_get_url(self, _url: str = None) -> tuple[str, int]:
+        if _url is None:
+            _url = self.url
         self.post_url()
         for _ in range(10):
             res_code = self.get_url()
@@ -106,10 +108,10 @@ class VTUrl(VTAutomator):
             else:
                 time.sleep(30)
 
-    def get_urls(self) -> list[tuple]:
+    def post_get_urls(self) -> list[tuple]:
         results: list = list()
         with ThreadPoolExecutor(self.workers) as executor:
-            future = [executor.submit(self._post_get_url, _url) for _url in self.url]
+            future = [executor.submit(self.post_get_url, _url) for _url in self.url]
             for f in as_completed(future):
                 results.append(f.result())
         return results
