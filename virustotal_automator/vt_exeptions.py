@@ -5,7 +5,6 @@ class VTAutomatorError(Exception):
     pass
 
 
-
 class RequestFailed(VTAutomatorError):
     def __init__(self):
         super().__init__("Unable to fulfill request status over 400.")
@@ -36,6 +35,11 @@ class EmptyContentError(VTAutomatorError):
         super().__init__("Empty return.")
 
 
+class ThreadingError(VTAutomatorError):
+    def __init__(self):
+        super().__init__("Treading Error.")
+
+
 class FilePasswordError(VTAutomatorError):
     def __init__(self):
         super().__init__("Password Error.")
@@ -50,5 +54,3 @@ class CacheExpiredError(VTAutomatorError):
 # raise vt_exeptions.CacheExpiredError(url=self.url,
 #                                                      last_analysis_utc=last_analysis_utc,
 #                                                         expire_date=expire_date)
-
-
