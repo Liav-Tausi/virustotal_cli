@@ -9,7 +9,7 @@ import os
 
 class VTFile(VTAutomator):
 
-    def __init__(self, vt_key: str, file: 'os.path'):
+    def __init__(self, vt_key: str, file: 'os.path', password: str = None):
         super().__init__()
 
         if not os.path.exists(file):
@@ -20,17 +20,21 @@ class VTFile(VTAutomator):
             raise vt_exeptions.ApiKeyError()
         self.__vt_key: str = vt_key
 
+        if password is not None and not isinstance(password, str):
+            raise vt_exeptions.FilePasswordError()
+        self.__password: str = password
 
     @property
     def file(self) -> 'os.path':
         return self.__file
 
-
     @property
     def vt_key(self):
         return self.__vt_key
 
-
+    @property
+    def password(self):
+        return self.__password
 
     def _get_req_file(self):
         if self.requests_amount_limit_counter < 500 and \
@@ -58,9 +62,7 @@ class VTFile(VTAutomator):
             else:
                 raise vt_exeptions.EmptyContentError()
 
-
-
-    def _post_req_file(self, password: str = None):
+    def _post_req_file(self):
         if self.requests_amount_limit_counter < 500 and \
                 self.requests_per_minute_limit_counter < 4:
 
@@ -72,7 +74,7 @@ class VTFile(VTAutomator):
             fh = open(self.file, "rb")
             files = {"file": (str(self.file), fh, mime_type)}
 
-            payload = {"password": password}
+            payload = {"password": self.password}
             headers = {
                 "accept": "application/json",
                 "x-apikey": self.vt_key
@@ -83,7 +85,7 @@ class VTFile(VTAutomator):
             else:
                 api = self.post_vt_api_file
 
-            if password is None:
+            if self.password is None:
                 req = requests.post(api, files=files, headers=headers)
             else:
                 req = requests.post(api, data=payload, files=files, headers=headers)
@@ -97,40 +99,35 @@ class VTFile(VTAutomator):
             else:
                 raise vt_exeptions.EmptyContentError()
 
-
+    @VTAutomator.get_cache_file
     def get_file(self):
-        rep: int = self._get_req_file().get('data').get('attributes').get('reputation')
+        rep: int = self['data']['attributes']['reputation']
         if rep is not None:
             return rep
         else:
             raise FileNotFoundError()
 
-
-    def post_file(self, password: str = None):
-        rep: str = self._post_req_file(password).get('data').get('type')
+    @VTAutomator.post_cache_file
+    def post_file(self):
+        rep: str = self['data']['type']
         if rep is not None:
             return rep
         else:
             raise FileNotFoundError()
 
-
-    def post_get_file(self, password: str = None):
-        self.post_file(password)
+    def post_get_file(self) -> int:
+        self.post_file(self.password)
         for _ in range(10):
             print('Checking...')
-            res_code = self._get_req_file().get('data')
-            if len(res_code) > 0:
-                return self.get_file()
+            res_code = self.get_file(self.password)
+            if isinstance(res_code, int):
+                return res_code
             else:
                 time.sleep(30)
         raise vt_exeptions.EmptyContentError()
-
-
-
 
     def _get_req_url(self):
         pass
 
     def _post_req_url(self):
         pass
-

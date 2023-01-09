@@ -26,7 +26,7 @@ class VTUrl(VTAutomator):
     def vt_key(self):
         return self.__vt_key
 
-    def _get_req_url(self) -> dict:
+    def _get_req_url(self) -> dict[str, dict]:
         if self.requests_amount_limit_counter < 500 and \
                 self.requests_per_minute_limit_counter < 4:
 
@@ -47,7 +47,7 @@ class VTUrl(VTAutomator):
             else:
                 raise vt_exeptions.EmptyContentError()
 
-    def _post_req_url(self) -> dict:
+    def _post_req_url(self) -> dict[str, dict]:
         if self.requests_amount_limit_counter < 500 and \
                 self.requests_per_minute_limit_counter < 4:
 
@@ -70,32 +70,31 @@ class VTUrl(VTAutomator):
             else:
                 raise vt_exeptions.EmptyContentError()
 
-    def get_url(self) -> int:
-        rep: int = self._get_req_url().get('data').get('attributes').get('reputation')
+    @VTAutomator.get_cache_url
+    def get_url(self):
+        rep: int = self['data']['attributes']['reputation']
         if rep is not None:
             return rep
         else:
             raise FileNotFoundError()
 
     def post_url(self) -> str:
-        rep: str = self._post_req_url().get('data').get('type')
+        rep: str = self._post_req_url().get('data')['type']
         if rep is not None:
             return rep
         else:
             raise FileNotFoundError()
 
-    def post_get_url(self):
+    def post_get_url(self) -> int:
         self.post_url()
         for _ in range(10):
             print('Checking...')
-            res_code = self._get_req_url().get('data').get('attributes').get('last_http_response_code')
-            if res_code == 200:
-                return self.get_url()
+            res_code = self.get_url()
+            if isinstance(res_code, int):
+                return res_code
             else:
                 time.sleep(30)
         raise vt_exeptions.EmptyContentError()
-
-
 
     def _get_req_file(self):
         pass

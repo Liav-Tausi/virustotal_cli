@@ -1,20 +1,19 @@
+from datetime import timedelta, date, datetime
 from abc import ABC, abstractmethod
-from datetime import timedelta, date
-import datetime
+import pytz
 import time
 
 
-
 class VTAutomator(ABC):
-    # _____urls_api_____ #
+    # _____urls_____ #
     __GET_VT_API_URL: str = r'https://www.virustotal.com/api/v3/urls/'
-
     __POST_VT_API_URL: str = r'https://www.virustotal.com/api/v3/urls'
+    __CACHE_URL_DICT: dict = dict()
 
-    # _____files_api_____ #
+    # _____files_____ #
     __GET_VT_API_FILE: str = r'https://www.virustotal.com/api/v3/files/'
-
     __POST_VT_API_FILE: str = r'https://www.virustotal.com/api/v3/files'
+    __CACHE_FILE_DICT: dict = dict()
 
     def __init__(self, ref_cache_month: int = 1):
         self.__requests_amount_limit: int = 500
@@ -27,9 +26,6 @@ class VTAutomator(ABC):
             ref_cache_month = 1
         ref_date = date.today() + timedelta(weeks=4 * ref_cache_month)
         self.__ref_cache_month: date.month = ref_date.month
-
-        self.__cache_url: dict = dict()
-        self.__cache_file: dict = dict()
 
     # _____property_____ #
 
@@ -65,6 +61,18 @@ class VTAutomator(ABC):
     def requests_per_minute_limit_counter(self) -> int:
         return self.__requests_per_minute_limit_counter
 
+    @property
+    def ref_cache_month(self) -> int:
+        return self.__ref_cache_month
+
+    @property
+    def cache_url_dict(self) -> dict['pytz.UTC', list[str, dict]]:
+        return self.__CACHE_URL_DICT
+
+    @property
+    def cache_file_dict(self) -> dict['pytz.UTC', list[str, dict]]:
+        return self.__CACHE_FILE_DICT
+
     # _____abstractmethod_urls____ #
 
     @abstractmethod
@@ -82,7 +90,7 @@ class VTAutomator(ABC):
         pass
 
     @abstractmethod
-    def _post_req_file(self, password):
+    def _post_req_file(self):
         pass
 
     # _____setters_____#
@@ -94,7 +102,7 @@ class VTAutomator(ABC):
         self.__requests_amount_limit_counter += 1
 
     def set_amount_limit_refresh(self) -> None:
-        day = datetime.timedelta(hours=24)
+        day = timedelta(hours=24)
         while True:
             time.sleep(day.total_seconds())
             self.__requests_amount_limit_counter = 0
@@ -103,3 +111,87 @@ class VTAutomator(ABC):
         while True:
             time.sleep(60)
             self.__requests_amount_limit_counter = 0
+
+    # ______get_decorators______ #
+    @staticmethod
+    def get_cache_url(func):
+        def wrapper(*args):
+
+            if args[0].url in args[0].cache_url_dict:
+                result = args[0].cache_url_dict[args[0].url]
+                last_analysis_epoch = result.get('data')['attributes']["last_analysis_date"]
+                last_analysis_utc = datetime.utcfromtimestamp(last_analysis_epoch).astimezone(pytz.UTC)
+                now = datetime.utcnow().astimezone(tz=pytz.UTC)
+                expire_date = last_analysis_utc + timedelta(args[0].ref_cache_month)
+                if now >= expire_date:
+                    args[0].cache_url_dict.pop(datetime.utcnow().astimezone(tz=pytz.UTC))
+                else:
+                    return func(args[0]._get_req_url())
+            else:
+                args[0].cache_url_dict[args[0].url] = args[0]._get_req_url()
+                return func(args[0].cache_url_dict[args[0].url])
+
+        return wrapper
+
+    @staticmethod
+    def get_cache_file(func):
+        def wrapper(*args):
+
+            if args[0].file in args[0].cache_file_dict:
+                result = args[0].cache_url_dict[args[0].file]
+                last_analysis_epoch = result.get('data')['attributes']["last_analysis_date"]
+                last_analysis_utc = datetime.utcfromtimestamp(last_analysis_epoch).astimezone(pytz.UTC)
+                now = datetime.utcnow().astimezone(tz=pytz.UTC)
+                expire_date = last_analysis_utc + timedelta(args[0].ref_cache_month)
+                if now >= expire_date:
+                    args[0].cache_file_dict.pop(datetime.utcnow().astimezone(tz=pytz.UTC))
+                else:
+                    return func(args[0]._get_req_file())
+            else:
+                args[0].cache_file_dict[args[0].file] = args[0]._get_req_file()
+                return func(args[0].cache_file_dict[args[0].file])
+
+        return wrapper
+
+    # _____post_decorators_____ #
+    @staticmethod
+    def post_cache_url(func):
+        def wrapper(*args):
+
+            if args[0].url in args[0].cache_url_dict:
+                result = args[0].cache_url_dict[args[0].url]
+                last_analysis_epoch = result.get('data')['attributes']["last_analysis_date"]
+                last_analysis_utc = datetime.utcfromtimestamp(last_analysis_epoch).astimezone(pytz.UTC)
+                now = datetime.utcnow().astimezone(tz=pytz.UTC)
+                expire_date = last_analysis_utc + timedelta(args[0].ref_cache_month)
+                if now >= expire_date:
+                    args[0].cache_url_dict.pop(datetime.utcnow().astimezone(tz=pytz.UTC))
+                else:
+                    return func(args[0]._post_req_url())
+            else:
+                args[0].cache_url_dict[args[0].url] = args[0]._post_req_url()
+                return func(args[0].cache_url_dict[args[0].url])
+
+        return wrapper
+
+    @staticmethod
+    def post_cache_file(func):
+        def wrapper(*args):
+
+            if args[0].file in args[0].cache_file_dict:
+                result = args[0].cache_url_dict[args[0].file]
+                last_analysis_epoch = result.get('data')['attributes']["last_analysis_date"]
+                last_analysis_utc = datetime.utcfromtimestamp(last_analysis_epoch).astimezone(pytz.UTC)
+                now = datetime.utcnow().astimezone(tz=pytz.UTC)
+                expire_date = last_analysis_utc + timedelta(args[0].ref_cache_month)
+                if now >= expire_date:
+                    args[0].cache_file_dict.pop(datetime.utcnow().astimezone(tz=pytz.UTC))
+                else:
+                    return func(args[0]._post_req_file(args[0].password))
+            else:
+                args[0].cache_file_dict[args[0].file] = args[0]._post_req_file(args[0].password)
+                return func(args[0].cache_file_dict[args[0].file])
+
+        return wrapper
+
+
