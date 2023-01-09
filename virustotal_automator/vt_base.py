@@ -5,6 +5,7 @@ import time
 
 
 class VTAutomator(ABC):
+
     # _____urls_____ #
     __GET_VT_API_URL: str = r'https://www.virustotal.com/api/v3/urls/'
     __POST_VT_API_URL: str = r'https://www.virustotal.com/api/v3/urls'
@@ -26,6 +27,7 @@ class VTAutomator(ABC):
             ref_cache_month = 1
         ref_date = date.today() + timedelta(weeks=4 * ref_cache_month)
         self.__ref_cache_month: date.month = ref_date.month
+
 
     # _____property_____ #
 
@@ -73,7 +75,9 @@ class VTAutomator(ABC):
     def cache_file_dict(self) -> dict['pytz.UTC', list[str, dict]]:
         return self.__CACHE_FILE_DICT
 
+
     # _____abstractmethod_urls____ #
+
 
     @abstractmethod
     def _get_req_url(self):
@@ -83,7 +87,9 @@ class VTAutomator(ABC):
     def _post_req_url(self):
         pass
 
+
     # _____abstractmethod_files____ #
+
 
     @abstractmethod
     def _get_req_file(self):
@@ -93,7 +99,9 @@ class VTAutomator(ABC):
     def _post_req_file(self):
         pass
 
+
     # _____setters_____#
+
 
     def set_amount_limit_counter(self) -> None:
         self.__requests_amount_limit_counter += 1
@@ -112,7 +120,9 @@ class VTAutomator(ABC):
             time.sleep(60)
             self.__requests_amount_limit_counter = 0
 
+
     # ______get_decorators______ #
+
     @staticmethod
     def get_cache_url(func):
         def wrapper(*args):
@@ -152,6 +162,7 @@ class VTAutomator(ABC):
                 return func(args[0].cache_file_dict[args[0].file])
 
         return wrapper
+
 
     # _____post_decorators_____ #
     @staticmethod
