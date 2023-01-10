@@ -13,8 +13,8 @@ class VTFile(VTAutomator):
 
     def __init__(self, file: tuple['os.path', ...], vt_key: str, password: str = None, workers: int = 7):
         super().__init__()
-        for index, every_url in enumerate(file):
-            if not os.path.exists(file[index]):
+        for every_file in file:
+            if not os.path.exists(every_file):
                 raise vt_exeptions.FileError()
             self.__file: tuple['os.path', ...] = file
 
@@ -53,12 +53,12 @@ class VTFile(VTAutomator):
             self.set_amount_limit_counter()
             self.set_per_minute_limit_counter()
 
-            for index, every_file in enumerate(self.file):
+            for every_file in self.file:
                 headers = {
                     "accept": "application/json",
                     "x-apikey": self.vt_key
                 }
-                with open(self.file[index], 'rb') as file:
+                with open(every_file, 'rb') as file:
                     file_hash = file.read()
 
                 hashed = hashlib.sha256(file_hash)
@@ -80,11 +80,11 @@ class VTFile(VTAutomator):
             self.set_amount_limit_counter()
             self.set_per_minute_limit_counter()
 
-            for index, every_file in enumerate(self.file):
-                mime_type, encoding = mimetypes.guess_type(self.file[index])
+            for every_file in self.file:
+                mime_type, encoding = mimetypes.guess_type(every_file)
 
-                fh = open(self.file[index], "rb")
-                files = {"file": (str(self.file[index]), fh, mime_type)}
+                fh = open(every_file, "rb")
+                files = {"file": (str(every_file), fh, mime_type)}
 
                 payload = {"password": self.password}
                 headers = {
@@ -92,7 +92,7 @@ class VTFile(VTAutomator):
                     "x-apikey": self.vt_key
                 }
 
-                if (os.path.getsize(self.file[index]) / 1048576) >= 24:
+                if (os.path.getsize(every_file) / 1048576) >= 24:
                     api = r'https://www.virustotal.com/api/v3/files/upload_url'
                 else:
                     api = self.post_vt_api_file
@@ -120,7 +120,7 @@ class VTFile(VTAutomator):
             raise FileNotFoundError()
 
     def post_file(self):
-        rep: str = self._get_req_file().get('data')['type']
+        rep: str = self._post_req_file().get('data')['type']
         if rep is not None:
             return rep
         else:
@@ -129,8 +129,9 @@ class VTFile(VTAutomator):
     def post_get_file(self, _file: str = None) -> tuple[str, int]:
         if _file is None:
             _file = self.file
-        if self.file not in self.cache_file_dict:
-            self.post_file()
+        for path in self.file:
+            if path not in self.cache_file_dict:
+                self.post_file()
         for _ in range(10):
             res_code = self.get_file()
             if isinstance(res_code, int):
