@@ -13,9 +13,6 @@ if __name__ == '__main__':
 
         print(vt_terminal.main())
 
-    except Exception():
-        print("Error restart program.")
-
     finally:
         with open('vt_auto.pickle', 'wb') as fh:
             pickle.dump(vt_automator, fh)
