@@ -3,7 +3,6 @@ from datetime import timedelta, date, datetime
 from abc import ABC, abstractmethod
 from threading import Lock
 import functools
-import argparse
 import pytz
 import time
 
@@ -127,20 +126,20 @@ class VTAutomator(ABC):
     def get_cache_url(func):
         @functools.wraps(func)
         def wrapper(*args):
-
-            if args[0].url in args[0].cache_url_dict:
-                result = args[0].cache_url_dict[args[0].url]
-                last_analysis_epoch = result.get('data')['attributes']["last_analysis_date"]
-                last_analysis_utc = datetime.utcfromtimestamp(last_analysis_epoch).astimezone(pytz.UTC)
-                now = datetime.utcnow().astimezone(tz=pytz.UTC)
-                expire_date = last_analysis_utc + timedelta(args[0].ref_cache_month)
-                if now >= expire_date:
-                    args[0].cache_url_dict.pop(datetime.utcnow().astimezone(tz=pytz.UTC))
+            for url_inx in args[0].url:
+                if url_inx in args[0].cache_url_dict:
+                    result = args[0].cache_url_dict[url_inx]
+                    last_analysis_epoch = result.get('data')['attributes']["last_analysis_date"]
+                    last_analysis_utc = datetime.utcfromtimestamp(last_analysis_epoch).astimezone(pytz.UTC)
+                    now = datetime.utcnow().astimezone(tz=pytz.UTC)
+                    expire_date = last_analysis_utc + timedelta(args[0].ref_cache_month)
+                    if now >= expire_date:
+                        args[0].cache_url_dict.pop(datetime.utcnow().astimezone(tz=pytz.UTC))
+                    else:
+                        return func(args[0]._get_req_url())
                 else:
-                    return func(args[0]._get_req_url())
-            else:
-                args[0].cache_url_dict[args[0].url] = args[0]._get_req_url()
-                return func(args[0].cache_url_dict[args[0].url])
+                    args[0].cache_url_dict[url_inx] = args[0]._get_req_url()
+                    return func(args[0].cache_url_dict[url_inx])
 
         return wrapper
 
@@ -148,20 +147,20 @@ class VTAutomator(ABC):
     def get_cache_file(func):
         @functools.wraps(func)
         def wrapper(*args):
-
-            if args[0].file in args[0].cache_file_dict:
-                result = args[0].cache_file_dict[args[0].file]
-                last_analysis_epoch = result.get('data')['attributes']["last_analysis_date"]
-                last_analysis_utc = datetime.utcfromtimestamp(last_analysis_epoch).astimezone(pytz.UTC)
-                now = datetime.utcnow().astimezone(tz=pytz.UTC)
-                expire_date = last_analysis_utc + timedelta(args[0].ref_cache_month)
-                if now >= expire_date:
-                    args[0].cache_file_dict.pop(datetime.utcnow().astimezone(tz=pytz.UTC))
+            for path in args[0].file:
+                if path in args[0].cache_file_dict:
+                    result = args[0].cache_file_dict[path]
+                    last_analysis_epoch = result.get('data')['attributes']["last_analysis_date"]
+                    last_analysis_utc = datetime.utcfromtimestamp(last_analysis_epoch).astimezone(pytz.UTC)
+                    now = datetime.utcnow().astimezone(tz=pytz.UTC)
+                    expire_date = last_analysis_utc + timedelta(args[0].ref_cache_month)
+                    if now >= expire_date:
+                        args[0].cache_file_dict.pop(datetime.utcnow().astimezone(tz=pytz.UTC))
+                    else:
+                        return func(args[0]._get_req_file())
                 else:
-                    return func(args[0]._get_req_file())
-            else:
-                args[0].cache_file_dict[args[0].file] = args[0]._get_req_file()
-                return func(args[0].cache_file_dict[args[0].file])
+                    args[0].cache_file_dict[path] = args[0]._get_req_file()
+                    return func(args[0].cache_file_dict[path])
 
         return wrapper
 
