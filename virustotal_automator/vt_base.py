@@ -1,3 +1,11 @@
+"""
+vt_automator.
+created by: liav tausi
+date: 1/12/2023
+"""
+
+
+
 from datetime import timedelta, date, datetime
 from abc import ABC, abstractmethod
 from threading import Lock
