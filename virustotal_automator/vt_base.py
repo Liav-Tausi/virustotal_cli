@@ -36,13 +36,25 @@ class VTAutomator(ABC):
         self.lock1 = Lock()
         self.lock2 = Lock()
 
+        self.__cache_url_dict = dict()
+        self.__cache_file_dict = dict()
+
+
         try:
-            if os.path.exists('vt_cache_url.json'):
+            if not os.path.exists('vt_cache_url.json'):
+                with open('vt_cache_url.json', 'x') as fh:
+                    pass
+            else:
                 with open('vt_cache_url.json', 'r') as fh1:
                     self.__cache_url_dict = json.load(fh1)
-            if os.path.exists('vt_cache_file.json'):
+
+            if not os.path.exists('vt_cache_file.json'):
+                with open('vt_cache_file.json', 'x') as fh:
+                    pass
+            else:
                 with open('vt_cache_file.json', 'r') as fh2:
                     self.__cache_file_dict = json.load(fh2)
+
         except FileNotFoundError:
             self.__cache_url_dict = dict()
             self.__cache_file_dict = dict()
