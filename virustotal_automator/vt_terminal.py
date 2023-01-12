@@ -1,9 +1,14 @@
+from typing import Tuple, List
+
 from vt_file import *
 from vt_url import *
 import argparse
 
 
 class Scan:
+    """
+    orders the terminal command line.
+    """
     def __init__(self, type_of, vt_key, workers):
         self.__type_of = type_of
         self.__vt_key = vt_key
@@ -75,7 +80,12 @@ class Scan:
 
 
 
-def main():
+def main() -> tuple[str, int] | str | list[tuple]:
+    """
+    entry point of the program.
+    A new ArgumentParser object is created, which is used to parse command-line
+    :return: tuple[str, int] | str | list[tuple]
+    """
     parser = argparse.ArgumentParser(description='The program will take in url/s or file/s as input '
                                                  'and return the scan results from the VirusTotal database')
     parser.add_argument('type', help='type of scan (file or url)')
