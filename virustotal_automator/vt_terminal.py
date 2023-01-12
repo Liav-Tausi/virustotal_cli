@@ -1,4 +1,9 @@
-from typing import Tuple, List
+"""
+vt_automator.
+created by: liav tausi
+date: 1/12/2023
+"""
+
 
 from vt_file import *
 from vt_url import *
@@ -86,8 +91,9 @@ def main() -> tuple[str, int] | str | list[tuple]:
     A new ArgumentParser object is created, which is used to parse command-line
     :return: tuple[str, int] | str | list[tuple]
     """
-    parser = argparse.ArgumentParser(description='The program will take in url/s or file/s as input '
-                                                 'and return the scan results from the VirusTotal database')
+    parser = argparse.ArgumentParser(description="""The program will take in url/s or file/s as input 
+                                                 and return the scan results from the VirusTotal database
+                                                 created by: liav tausi""")
     parser.add_argument('type', help='type of scan (file or url)')
     parser.add_argument('--workers', type=int, default=7, help='number of workers')
     parser.add_argument('method', help='method to run')
