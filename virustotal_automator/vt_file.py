@@ -12,6 +12,16 @@ import os
 class VTFile(VTAutomator):
 
     def __init__(self, file: tuple['os.path', ...], vt_key: str, password: str = None, workers: int = 7):
+        """
+        sets the initial values for the file(s) to be scanned, the VirusTotal API key,
+        the password for the file (if any) and the number of worker threads to use.
+        It also checks the validity of the passed values and raises exceptions if they are invalid.
+        :param file: tuple['os.path', ...] file/s for scanning
+        :param vt_key: str API key
+        :param password: str = None file password
+        :param workers: int = 7 max thread workers
+        """
+
         super().__init__()
         for every_file in file:
             if not os.path.exists(every_file):
@@ -46,7 +56,16 @@ class VTFile(VTAutomator):
     def workers(self) -> int:
         return self.__workers
 
-    def _get_req_file(self, _file):
+    def _get_req_file(self, _file) -> dict[str, dict]:
+        """
+
+        sends a GET request to the VirusTotal API to retrieve information about a file.
+        It uses the file's SHA256 hash as the identifier.
+        raises exceptions if the request fails or returns empty content.
+        :param _file:
+        :return: dict
+
+        """
         if self.requests_amount_limit_counter < 500 and \
                 self.requests_per_minute_limit_counter < 4:
 
@@ -60,19 +79,31 @@ class VTFile(VTAutomator):
             with open(_file, 'rb') as file:
                 file_hash = file.read()
 
+            # SHA256 hash as the identifier
             hashed = hashlib.sha256(file_hash)
             hex_hash = hashed.hexdigest()
 
+            # API request
             req: 'requests' = requests.get(self.get_vt_api_file + hex_hash, headers=headers)
 
             if req.status_code >= 400:
                 raise vt_exeptions.RequestFailed()
             if bool(req.json()):
+                # return dict[str, dict]
                 return req.json()
             else:
                 raise vt_exeptions.EmptyContentError()
 
-    def _post_req_file(self, _file):
+    def _post_req_file(self, _file) -> dict[str, dict]:
+        """
+
+        sends a POST request to the VirusTotal API to upload a file for scanning.
+        It also includes the password for the file (if any) in the request.
+        It raises exceptions if the request fails or returns empty content.
+        :param _file:
+        :return: dict[str,dict]
+
+        """
         if self.requests_amount_limit_counter < 500 and \
                 self.requests_per_minute_limit_counter < 4:
 
@@ -90,11 +121,13 @@ class VTFile(VTAutomator):
                 "x-apikey": self.vt_key
             }
 
+            # bigger files endpoint
             if (os.path.getsize(_file) / 1048576) >= 24:
                 api = r'https://www.virustotal.com/api/v3/files/upload_url'
             else:
                 api = self.post_vt_api_file
 
+            # API request
             if self.password is None:
                 req = requests.post(api, files=files, headers=headers)
             else:
@@ -105,38 +138,73 @@ class VTFile(VTAutomator):
             if req.status_code >= 400:
                 raise vt_exeptions.RequestFailed()
             if bool(req.json()):
+                # return dict[str,dict]
                 return req.json()
             else:
                 raise vt_exeptions.EmptyContentError()
 
     @VTAutomator.get_cache_file
-    def get_file(self):
+    def _gets_a_file(self) -> int:
+        """
+        decorator function that retrieves the file information from the cache if it exists,
+        otherwise it calls the _get_req_file function to get the information from the API.
+        :return: int
+        """
         rep: int = self['data']['attributes']['reputation']
         if rep is not None:
             return rep
         else:
             raise FileNotFoundError()
 
-    def post_file(self, _file: str = None):
+    def get_file(self) -> tuple[str, int]:
+        """
+        function dedicated for GET action on one file
+        :return:
+        """
+        return self.file[0], self._gets_a_file(self.file[0])
+
+
+    def post_file(self, _file: str = None) -> str:
+        """
+        function dedicated for POST action on file
+        :param _file:
+        :return: 'analysis'
+        """
         rep: str = self._post_req_file(_file).get('data')['type']
         if rep is not None:
             return rep
         else:
             raise FileNotFoundError()
 
+
     def post_get_file(self, _file: str = None) -> tuple[str, int]:
+        """
+        used to both upload and retrieve the scan results of a file.
+        It starts by uploading the file to VirusTotal API by calling the post_file function.
+        It iterates over the file(s) and calls the _gets_a_file function to get the scan results of the file.
+        :param _file:
+        :return: tuple[str, int]
+        """
         if _file is None:
             _url = self.file
         for file in self.file:
             self.post_file(_file)
             for _ in range(1):
-                res_code = self.get_file(_file)
+                res_code = self._gets_a_file(_file)
                 if isinstance(res_code, int):
                     return _file, res_code
                 else:
                     time.sleep(20)
 
     def post_get_files(self) -> list[tuple]:
+        """
+
+        Takes the files specified in the constructor and scans them using the VirusTotal API.
+        It uses the ThreadPoolExecutor to execute the requests concurrently and the as_completed function
+        to retrieve the results as soon as they are available.
+        :return: list[tuple]
+
+        """
         results: list = list()
         with ThreadPoolExecutor(self.workers) as executor:
             future = [executor.submit(self.post_get_file, _file) for _file in self.file]
