@@ -17,8 +17,8 @@ used for scanning URLs. It also inherits from the VTAutomator class and includes
 
 **workers**:  This argument is used to specify the number of worker threads to use in the scan.
 
-**method**:  This argument is used to specify the method of scan, such as 'get_file', 'post_file', 
-'post_get_file', 'get_url', 'post_url', 'post_get_url'
+**method**:  This argument is used to specify the method of scan, such as **get_file**, **post_file**, 
+**post_get_file**, **get_url**, **post_url**, **post_get_url**
 
 **vt_key**:  This argument is used to specify the VirusTotal API key.
 
