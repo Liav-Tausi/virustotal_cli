@@ -1,7 +1,8 @@
-<p align="center">
-    <img src="https://user-images.githubusercontent.com/50721644/212086526-2fdd00bb-057d-44b5-afcf-9143c1dd78af.png" />
-    <p align="center"> **virustotal automator** </p>
-</p>
+<div align="center">
+    <img src="https://user-images.githubusercontent.com/50721644/212086526-2fdd00bb-057d-44b5-afcf-9143c1dd78af.png">
+    <h2 align="center"> virustotal automator  </h2>
+   
+</div>
 
 
 
