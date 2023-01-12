@@ -171,17 +171,50 @@ class VTFile(VTAutomator):
         return self.file[0], self._gets_a_file(self.file[0])
 
 
-    def post_file(self, _file: str = None) -> str:
+
+    def get_files(self) -> list[tuple[str, int]]:
+        """
+        creates a list of futures by submitting the method self._gets_a_file with each file
+        :return: list[tuple[str, int]]
+
+        """
+        results: list = list()
+        with ThreadPoolExecutor(self.workers) as executor:
+            futures = [executor.submit(self._gets_a_file, _file) for _file in self.file]
+            for future in as_completed(futures):
+                file = self.file[futures.index(future)]
+                results.append((file, future.result()))
+        return results
+
+
+
+    def post_file(self, _file: str = None) -> bool:
         """
         function dedicated for POST action on file
         :param _file:
         :return: 'analysis'
         """
         rep: str = self._post_req_file(_file).get('data')['type']
-        if rep is not None:
-            return rep
+        if rep == 'analysis':
+            return True
         else:
             raise FileNotFoundError()
+
+
+
+    def post_files(self) -> bool:
+        """
+        creates a list of futures by submitting the method self.post_file with each file
+        :return: list[tuple[str, int]]
+
+        """
+        results: list = list()
+        with ThreadPoolExecutor(self.workers) as executor:
+            futures = [executor.submit(self.post_file, _file) for _file in self.file]
+            for future in as_completed(futures):
+                results.append(future.result())
+        if len(results) == len(self.file):
+            return True
 
 
     def post_get_file(self, _file: str = None) -> tuple[str, int]:
