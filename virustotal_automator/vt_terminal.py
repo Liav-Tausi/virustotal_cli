@@ -36,6 +36,7 @@ class Scan:
         else:
             raise ValueError(f"Invalid scan type: {self.type_of}")
 
+
     def _scan_files(self, file_paths, method, password):
         """
         Scans files using the VirusTotal API
