@@ -31,7 +31,7 @@ class VTFile(VTAutomator):
         self.__workers: int = workers
 
     @property
-    def file(self) -> 'os.path':
+    def file(self) -> tuple['os.path', ...]:
         return self.__file
 
     @property
@@ -46,70 +46,68 @@ class VTFile(VTAutomator):
     def workers(self) -> int:
         return self.__workers
 
-    def _get_req_file(self):
+    def _get_req_file(self, _file):
         if self.requests_amount_limit_counter < 500 and \
                 self.requests_per_minute_limit_counter < 4:
 
             self.set_amount_limit_counter()
             self.set_per_minute_limit_counter()
 
-            for every_file in self.file:
-                headers = {
-                    "accept": "application/json",
-                    "x-apikey": self.vt_key
-                }
-                with open(every_file, 'rb') as file:
-                    file_hash = file.read()
+            headers = {
+                "accept": "application/json",
+                "x-apikey": self.vt_key
+            }
+            with open(_file, 'rb') as file:
+                file_hash = file.read()
 
-                hashed = hashlib.sha256(file_hash)
-                hex_hash = hashed.hexdigest()
+            hashed = hashlib.sha256(file_hash)
+            hex_hash = hashed.hexdigest()
 
-                req: 'requests' = requests.get(self.get_vt_api_file + hex_hash, headers=headers)
+            req: 'requests' = requests.get(self.get_vt_api_file + hex_hash, headers=headers)
 
-                if req.status_code >= 400:
-                    raise vt_exeptions.RequestFailed()
-                if bool(req.json()):
-                    return req.json()
-                else:
-                    raise vt_exeptions.EmptyContentError()
+            if req.status_code >= 400:
+                raise vt_exeptions.RequestFailed()
+            if bool(req.json()):
+                return req.json()
+            else:
+                raise vt_exeptions.EmptyContentError()
 
-    def _post_req_file(self):
+    def _post_req_file(self, _file):
         if self.requests_amount_limit_counter < 500 and \
                 self.requests_per_minute_limit_counter < 4:
 
             self.set_amount_limit_counter()
             self.set_per_minute_limit_counter()
 
-            for every_file in self.file:
-                mime_type, encoding = mimetypes.guess_type(every_file)
+            mime_type, encoding = mimetypes.guess_type(_file)
 
-                fh = open(every_file, "rb")
-                files = {"file": (str(every_file), fh, mime_type)}
+            fh = open(_file, "rb")
+            files = {"file": (str(_file), fh, mime_type)}
 
-                payload = {"password": self.password}
-                headers = {
-                    "accept": "application/json",
-                    "x-apikey": self.vt_key
-                }
+            payload = {"password": self.password}
+            headers = {
+                "accept": "application/json",
+                "x-apikey": self.vt_key
+            }
 
-                if (os.path.getsize(every_file) / 1048576) >= 24:
-                    api = r'https://www.virustotal.com/api/v3/files/upload_url'
-                else:
-                    api = self.post_vt_api_file
+            if (os.path.getsize(_file) / 1048576) >= 24:
+                api = r'https://www.virustotal.com/api/v3/files/upload_url'
+            else:
+                api = self.post_vt_api_file
 
-                if self.password is None:
-                    req = requests.post(api, files=files, headers=headers)
-                else:
-                    req = requests.post(api, data=payload, files=files, headers=headers)
+            if self.password is None:
+                req = requests.post(api, files=files, headers=headers)
+            else:
+                req = requests.post(api, data=payload, files=files, headers=headers)
 
-                fh.close()
+            fh.close()
 
-                if req.status_code >= 400:
-                    raise vt_exeptions.RequestFailed()
-                if bool(req.json()):
-                    return req.json()
-                else:
-                    raise vt_exeptions.EmptyContentError()
+            if req.status_code >= 400:
+                raise vt_exeptions.RequestFailed()
+            if bool(req.json()):
+                return req.json()
+            else:
+                raise vt_exeptions.EmptyContentError()
 
     @VTAutomator.get_cache_file
     def get_file(self):
@@ -119,8 +117,8 @@ class VTFile(VTAutomator):
         else:
             raise FileNotFoundError()
 
-    def post_file(self):
-        rep: str = self._post_req_file().get('data')['type']
+    def post_file(self, _file: str = None):
+        rep: str = self._post_req_file(_file).get('data')['type']
         if rep is not None:
             return rep
         else:
@@ -128,16 +126,16 @@ class VTFile(VTAutomator):
 
     def post_get_file(self, _file: str = None) -> tuple[str, int]:
         if _file is None:
-            _file = self.file
-        for path in self.file:
-            if path not in self.cache_file_dict:
-                self.post_file()
-        for _ in range(10):
-            res_code = self.get_file()
-            if isinstance(res_code, int):
-                return _file, res_code
-            else:
-                time.sleep(30)
+            _url = self.file
+        for file in self.file:
+            if file not in self.cache_file_dict:
+                self.post_file(_file)
+            for _ in range(1):
+                res_code = self.get_file(_file)
+                if isinstance(res_code, int):
+                    return _file, res_code
+                else:
+                    time.sleep(20)
 
     def post_get_files(self) -> list[tuple]:
         results: list = list()
@@ -148,8 +146,8 @@ class VTFile(VTAutomator):
         return results
 
 
-    def _get_req_url(self):
+    def _get_req_url(self, _url):
         pass
 
-    def _post_req_url(self):
+    def _post_req_url(self, _url):
         pass
