@@ -1,3 +1,11 @@
+"""
+vt_automator.
+created by: liav tausi
+date: 1/12/2023
+"""
+
+
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from vt_base import *
 import vt_exeptions
