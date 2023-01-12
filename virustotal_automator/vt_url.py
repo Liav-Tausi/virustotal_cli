@@ -157,7 +157,7 @@ class VTUrl(VTAutomator):
         """
         if _url is None:
             _url = self.url
-        for url_inx in self.url:
+        for _ in self.url:
             self.post_url(_url)
             for _ in range(1):
                 res_code = self._gets_a_url(_url)
