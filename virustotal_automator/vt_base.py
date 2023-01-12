@@ -1,4 +1,3 @@
-
 from datetime import timedelta, date, datetime
 from abc import ABC, abstractmethod
 from threading import Lock
@@ -11,6 +10,9 @@ import os
 
 
 class VTAutomator(ABC):
+    """
+    store the URLs of the VirusTotal APIs GET and POST endpoints for URLs and files.
+    """
     # _____urls_____ #
     __GET_VT_API_URL: str = r'https://www.virustotal.com/api/v3/urls/'
     __POST_VT_API_URL: str = r'https://www.virustotal.com/api/v3/urls'
@@ -20,6 +22,15 @@ class VTAutomator(ABC):
     __POST_VT_API_FILE: str = r'https://www.virustotal.com/api/v3/files'
 
     def __init__(self, ref_cache_month: int = 1):
+        """
+        this is an abstract base/father class for the ather class.
+        it stores info and creates structured base.
+        it tries to open and read the data from two json files 'vt_cache_url.json' and 'vt_cache_file.json'
+        and loads the data in the dicts __cache_url_dict and __cache_file_dict.
+        It also sets the requests amount and requests per minute limits for interacting with the VirusTotal API.
+        :param ref_cache_month: cache refresh rate
+        """
+        # registering a save_data function to be called when the program exits
         atexit.register(self.save_data)
 
         self.__requests_amount_limit: int = 500
@@ -33,14 +44,16 @@ class VTAutomator(ABC):
         ref_date = date.today() + timedelta(weeks=4 * ref_cache_month)
         self.__ref_cache_month: date.month = ref_date.month
 
+        # threading lock
         self.lock1 = Lock()
         self.lock2 = Lock()
 
+        # cache dicts
         self.__cache_url_dict = dict()
         self.__cache_file_dict = dict()
 
-
         try:
+            # open and read the data from two json files 'vt_cache_url.json' and 'vt_cache_file.json'
             if not os.path.exists('vt_cache_url.json'):
                 with open('vt_cache_url.json', 'x') as fh:
                     pass
@@ -58,7 +71,6 @@ class VTAutomator(ABC):
         except FileNotFoundError:
             self.__cache_url_dict = dict()
             self.__cache_file_dict = dict()
-
 
     # _____property_____ #
 
@@ -147,18 +159,30 @@ class VTAutomator(ABC):
             time.sleep(60)
             self.__requests_amount_limit_counter = 0
 
+    # update dict from url decorator
     def _update_cache_url_dict(self, url_inx, result):
         with self.lock1:
             self.__cache_url_dict[url_inx] = result
 
+    # update dict from file decorator
     def _update_cache_file_dict(self, path, result):
         with self.lock2:
             self.__cache_file_dict[path] = result
 
     # ______decorators______ #
-
     @staticmethod
     def get_cache_url(func):
+        """
+        The decorator checks if the given url is present in the __cache_url_dict,
+        if present it fetches the dict path, last analysis date and time, current date and time and expire date.
+        If the current date and time is greater than or equal to the expire date, it removes the url from the cache.
+        Else it returns the result of the original function by passing the dict path.
+        f the url is not present in the dict, it calls the _get_req_url method
+        and updates the cache dict by calling the _update_cache_url_dict method and returns the result of the original
+        function by passing the dict path.
+        :param func:
+        :return:
+        """
         @functools.wraps(func)
         def wrapper(*args):
             url = args[1]
@@ -182,6 +206,17 @@ class VTAutomator(ABC):
 
     @staticmethod
     def get_cache_file(func):
+        """
+        The decorator checks if the given file is present in the __cache_file_dict,
+        if present it fetches the dict path, last analysis date and time, current date and time and expire date.
+        If the current date and time is greater than or equal to the expire date, it removes the file from the cache.
+        Else it returns the result of the original function by passing the dict path.
+        If the file is not present in the dict, it calls the _get_req_file method
+        and updates the cache dict by calling the _update_cache_file_dict method and returns the result of the original
+        function by passing the dict path.
+        :param func:
+        :return:
+        """
         @functools.wraps(func)
         def wrapper(*args):
             path = args[1]
@@ -203,7 +238,11 @@ class VTAutomator(ABC):
 
         return wrapper
 
-    def save_data(self):
+    def save_data(self) -> None:
+        """
+        save data in cache to 'vt_cache_url.json' and 'vt_cache_file.json'.
+        :return: None
+        """
         with open('vt_cache_url.json', 'w') as fh1:
             json.dump(self.cache_url_dict, fh1)
 
