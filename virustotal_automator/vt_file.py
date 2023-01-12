@@ -58,12 +58,11 @@ class VTFile(VTAutomator):
 
     def _get_req_file(self, _file) -> dict[str, dict]:
         """
-
         sends a GET request to the VirusTotal API to retrieve information about a file.
         It uses the file's SHA256 hash as the identifier.
         raises exceptions if the request fails or returns empty content.
-        :param _file:
-        :return: dict
+        :param _file: a file
+        :return: dict[str, dict]
 
         """
         if self.requests_amount_limit_counter < 500 and \
@@ -94,13 +93,13 @@ class VTFile(VTAutomator):
             else:
                 raise vt_exeptions.EmptyContentError()
 
+
     def _post_req_file(self, _file) -> dict[str, dict]:
         """
-
         sends a POST request to the VirusTotal API to upload a file for scanning.
         It also includes the password for the file (if any) in the request.
         It raises exceptions if the request fails or returns empty content.
-        :param _file:
+        :param _file: a file
         :return: dict[str,dict]
 
         """
@@ -159,7 +158,7 @@ class VTFile(VTAutomator):
     def get_file(self) -> tuple[str, int]:
         """
         function dedicated for GET action on one file
-        :return:
+        :return: tuple[str, int]
         """
         return self.file[0], self._gets_a_file(self.file[0])
 
@@ -184,6 +183,7 @@ class VTFile(VTAutomator):
         It iterates over the file(s) and calls the _gets_a_file function to get the scan results of the file.
         :param _file:
         :return: tuple[str, int]
+
         """
         if _file is None:
             _url = self.file
@@ -198,7 +198,6 @@ class VTFile(VTAutomator):
 
     def post_get_files(self) -> list[tuple]:
         """
-
         Takes the files specified in the constructor and scans them using the VirusTotal API.
         It uses the ThreadPoolExecutor to execute the requests concurrently and the as_completed function
         to retrieve the results as soon as they are available.
