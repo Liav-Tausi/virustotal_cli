@@ -128,8 +128,7 @@ class VTFile(VTAutomator):
         if _file is None:
             _url = self.file
         for file in self.file:
-            if file not in self.cache_file_dict:
-                self.post_file(_file)
+            self.post_file(_file)
             for _ in range(1):
                 res_code = self.get_file(_file)
                 if isinstance(res_code, int):
