@@ -4,17 +4,12 @@ created by: liav tausi
 date: 1/12/2023
 """
 
-
-
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from vt_base import *
 import vt_exeptions
 import requests
 import base64
 import time
-
-
-
 
 
 class VTUrl(VTAutomator):
@@ -141,7 +136,24 @@ class VTUrl(VTAutomator):
         return self.url[0], self._gets_a_url(self.url[0])
 
 
-    def post_url(self, _url: str = None) -> str:
+
+    def get_urls(self) -> list[tuple[str, int]]:
+        """
+        creates a list of futures by submitting the method self._gets_a_url with each URL
+        :return: list[tuple[str, int]]
+
+        """
+        results: list = list()
+        with ThreadPoolExecutor(self.workers) as executor:
+            futures = [executor.submit(self._gets_a_url, _url) for _url in self.url]
+            for future in as_completed(futures):
+                url = self.url[futures.index(future)]
+                results.append((url, future.result()))
+        return results
+
+
+
+    def post_url(self, _url: str = None) -> bool:
         """
         function dedicated for POST action on file
         :param _url: an url
@@ -149,10 +161,24 @@ class VTUrl(VTAutomator):
 
         """
         rep: str = self._post_req_url(_url).get('data')['type']
-        if rep is not None:
-            return rep
+        if rep == 'analysis':
+            return True
         else:
             raise FileNotFoundError()
+
+    def post_urls(self) -> bool:
+        """
+        creates a list of futures by submitting the method self.post_url with each url
+        :return: list[tuple[str, int]]
+
+        """
+        results: list = list()
+        with ThreadPoolExecutor(self.workers) as executor:
+            futures = [executor.submit(self.post_url, _url) for _url in self.url]
+            for future in as_completed(futures):
+                results.append(future.result())
+        if len(results) == len(self.url):
+            return True
 
     def post_get_url(self, _url: str = None) -> tuple[str, int]:
         """
@@ -189,11 +215,8 @@ class VTUrl(VTAutomator):
                 results.append(f.result())
         return results
 
-
     def _get_req_file(self, _file):
         pass
 
     def _post_req_file(self, _file):
         pass
-
-
