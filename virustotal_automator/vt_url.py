@@ -102,8 +102,7 @@ class VTUrl(VTAutomator):
         if _url is None:
             _url = self.url
         for url_inx in self.url:
-            if url_inx not in self.cache_url_dict:
-                self.post_url(_url)
+            self.post_url(_url)
             for _ in range(1):
                 res_code = self.get_url(_url)
                 if isinstance(res_code, int):
