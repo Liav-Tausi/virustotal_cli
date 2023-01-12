@@ -187,7 +187,7 @@ class VTFile(VTAutomator):
         """
         if _file is None:
             _url = self.file
-        for file in self.file:
+        for _ in self.file:
             self.post_file(_file)
             for _ in range(1):
                 res_code = self._gets_a_file(_file)
