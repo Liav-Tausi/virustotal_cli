@@ -8,7 +8,7 @@ date: 1/12/2023
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from vt_base import *
-import vt_exeptions
+import vt_exceptions
 import mimetypes
 import requests
 import hashlib
@@ -34,19 +34,19 @@ class VTFile(VTAutomator):
         super().__init__()
         for every_file in file:
             if not os.path.exists(every_file):
-                raise vt_exeptions.FileError()
+                raise vt_exceptions.FileError()
             self.__file: tuple['os.path', ...] = file
 
         if not isinstance(vt_key, str) or not vt_key:
-            raise vt_exeptions.ApiKeyError()
+            raise vt_exceptions.ApiKeyError()
         self.__vt_key: str = vt_key
 
         if password is not None and not isinstance(password, str):
-            raise vt_exeptions.FilePasswordError()
+            raise vt_exceptions.FilePasswordError()
         self.__password: str = password
 
         if not isinstance(workers, int):
-            raise vt_exeptions.ThreadingError()
+            raise vt_exceptions.ThreadingError()
         self.__workers: int = workers
 
     @property
@@ -92,14 +92,14 @@ class VTFile(VTAutomator):
             req: 'requests' = requests.get(self.get_vt_api_file + hex_hash, headers=headers)
 
             if req.status_code >= 400:
-                raise vt_exeptions.RequestFailed()
+                raise vt_exceptions.RequestFailed()
             if bool(req.json()):
                 # return dict[str, dict]
                 return req.json()
             else:
-                raise vt_exeptions.EmptyContentError()
+                raise vt_exceptions.EmptyContentError()
         else:
-            raise vt_exeptions.RestrictionsExclusion()
+            raise vt_exceptions.RestrictionsExclusion()
 
 
     def _post_req_file(self, _file) -> dict[str, dict]:
@@ -140,14 +140,14 @@ class VTFile(VTAutomator):
             fh.close()
 
             if req.status_code >= 400:
-                raise vt_exeptions.RequestFailed()
+                raise vt_exceptions.RequestFailed()
             if bool(req.json()):
                 # return dict[str,dict]
                 return req.json()
             else:
-                raise vt_exeptions.EmptyContentError()
+                raise vt_exceptions.EmptyContentError()
         else:
-            raise vt_exeptions.RestrictionsExclusion()
+            raise vt_exceptions.RestrictionsExclusion()
 
     @VTAutomator.get_cache_file
     def _gets_a_file(self) -> int:
