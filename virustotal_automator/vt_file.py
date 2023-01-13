@@ -28,8 +28,9 @@ class VTFile(VTAutomator):
         :param vt_key: str API key
         :param password: str = None file password
         :param workers: int = 7 max thread workers
-        """
 
+        """
+        self.set_api_key(vt_key)
         super().__init__()
         for every_file in file:
             if not os.path.exists(every_file):
@@ -73,11 +74,8 @@ class VTFile(VTAutomator):
         :return: dict[str, dict]
 
         """
-        if self.requests_amount_limit_counter < 500 and \
-                self.requests_per_minute_limit_counter < 4:
-
-            self.set_amount_limit_counter()
-            self.set_per_minute_limit_counter()
+        if self._restrictions():
+            self.set_limit_counters()
 
             headers = {
                 "accept": "application/json",
@@ -100,6 +98,8 @@ class VTFile(VTAutomator):
                 return req.json()
             else:
                 raise vt_exeptions.EmptyContentError()
+        else:
+            raise vt_exeptions.RestrictionsExclusion()
 
 
     def _post_req_file(self, _file) -> dict[str, dict]:
@@ -111,11 +111,8 @@ class VTFile(VTAutomator):
         :return: dict[str,dict]
 
         """
-        if self.requests_amount_limit_counter < 500 and \
-                self.requests_per_minute_limit_counter < 4:
-
-            self.set_amount_limit_counter()
-            self.set_per_minute_limit_counter()
+        if self._restrictions():
+            self.set_limit_counters()
 
             mime_type, encoding = mimetypes.guess_type(_file)
 
@@ -149,6 +146,8 @@ class VTFile(VTAutomator):
                 return req.json()
             else:
                 raise vt_exeptions.EmptyContentError()
+        else:
+            raise vt_exeptions.RestrictionsExclusion()
 
     @VTAutomator.get_cache_file
     def _gets_a_file(self) -> int:
