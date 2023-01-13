@@ -10,7 +10,7 @@
 
 
 
-This program is a **CLI** running scanner that allows users to scan multiple **files and URLs** for potential malware and viruses. It utilizes the **VirusTotal** database API and retrieve scan results and reputation scores for the given files or URLs.
+VTAutomator is a wrapper for virustotal, this program is an **CLI** running scanner that allows users to scan multiple **files and URLs** for potential malware and viruses. It utilizes the **VirusTotal** database API and retrieve scan results and reputation scores for the given files or URLs.
 
 ### *VTAutomator* 
 serves as the base class for the other classes and contains common functionality such as endpoints data, cache handling, and error handling.
