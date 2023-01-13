@@ -57,8 +57,12 @@ class Scan:
         vt_file: VTFile = VTFile(file=file_paths, vt_key=self.vt_key, workers=self.workers, password=password)
         if method == 'get_file':
             return vt_file.get_file()
+        elif method == 'get_files':
+            return vt_file.get_files()
         elif method == 'post_file':
             return vt_file.post_file()
+        elif method == 'post_files':
+            return vt_file.get_files()
         elif method == 'post_get_file':
             return vt_file.post_get_file()
         elif method == 'post_get_files':
@@ -75,8 +79,12 @@ class Scan:
         vt_url: VTUrl = VTUrl(url=urls, vt_key=self.vt_key, workers=self.workers)
         if method == 'get_url':
             return vt_url.get_url()
+        elif method == 'get_urls':
+            return vt_url.get_urls()
         elif method == 'post_url':
             return vt_url.post_url()
+        elif method == 'post_urls':
+            return vt_url.post_urls()
         elif method == 'post_get_url':
             return vt_url.post_get_url()
         elif method == 'post_get_urls':
