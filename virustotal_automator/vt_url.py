@@ -6,7 +6,7 @@ date: 1/12/2023
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from vt_base import *
-import vt_exeptions
+import vt_exceptions
 import requests
 import base64
 import time
@@ -27,16 +27,16 @@ class VTUrl(VTAutomator):
         self.set_api_key(vt_key)
         super().__init__()
         if not isinstance(workers, int):
-            raise vt_exeptions.ThreadingError()
+            raise vt_exceptions.ThreadingError()
         self.__workers: int = workers
 
         for every_url in url:
             if not isinstance(every_url, str):
-                raise vt_exeptions.UrlError()
+                raise vt_exceptions.UrlError()
             self.__url: tuple[str, ...] = url
 
         if not isinstance(vt_key, str) or not vt_key:
-            raise vt_exeptions.ApiKeyError()
+            raise vt_exceptions.ApiKeyError()
         self.__vt_key: str = vt_key
 
 
@@ -73,14 +73,14 @@ class VTUrl(VTAutomator):
             req: 'requests' = requests.get(url=self.get_vt_api_url + url_id, headers=headers)
 
             if req.status_code >= 400:
-                raise vt_exeptions.RequestFailed()
+                raise vt_exceptions.RequestFailed()
             elif bool(req.json()):
                 # return dict[str, dict]
                 return req.json()
             else:
-                raise vt_exeptions.EmptyContentError()
+                raise vt_exceptions.EmptyContentError()
         else:
-            raise vt_exeptions.RestrictionsExclusion()
+            raise vt_exceptions.RestrictionsExclusion()
 
     def _post_req_url(self, _url) -> dict[str, dict]:
         """
@@ -103,14 +103,14 @@ class VTUrl(VTAutomator):
             # API request
             req: 'requests' = requests.post(self.post_vt_api_url, data=payload, headers=headers)
             if req.status_code >= 400:
-                raise vt_exeptions.RequestFailed()
+                raise vt_exceptions.RequestFailed()
             if bool(req.json()):
                 # return dict[str, dict]
                 return req.json()
             else:
-                raise vt_exeptions.EmptyContentError()
+                raise vt_exceptions.EmptyContentError()
         else:
-            raise vt_exeptions.RestrictionsExclusion()
+            raise vt_exceptions.RestrictionsExclusion()
 
     @VTAutomator.get_cache_url
     def _gets_a_url(self) -> int:
