@@ -1,7 +1,7 @@
+<div align="left">by liav tausi</div>
 <div align="center">
     <img src="https://user-images.githubusercontent.com/50721644/212086526-2fdd00bb-057d-44b5-afcf-9143c1dd78af.png">
-    <h2 align="center"> virustotal automator  </h2>
-   
+    <h2 align="center">virustotal automator</h2>
 </div>
 
 
