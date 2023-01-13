@@ -4,8 +4,6 @@ created by: liav tausi
 date: 1/12/2023
 """
 
-
-
 import datetime
 
 
@@ -36,6 +34,11 @@ class UrlError(VTAutomatorError):
 class FileError(VTAutomatorError):
     def __init__(self):
         super().__init__("Invalid path.")
+
+
+class RestrictionsExclusion(VTAutomatorError):
+    def __init__(self):
+        super().__init__("Restrictions Excluded.")
 
 
 class EmptyContentError(VTAutomatorError):
