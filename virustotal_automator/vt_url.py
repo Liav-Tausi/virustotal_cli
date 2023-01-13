@@ -22,8 +22,9 @@ class VTUrl(VTAutomator):
         :param url: tuple[str, ...] url/s for scanning
         :param vt_key: str API key
         :param workers: int = 7 max thread workers
-        """
 
+        """
+        self.set_api_key(vt_key)
         super().__init__()
         if not isinstance(workers, int):
             raise vt_exeptions.ThreadingError()
@@ -37,6 +38,7 @@ class VTUrl(VTAutomator):
         if not isinstance(vt_key, str) or not vt_key:
             raise vt_exeptions.ApiKeyError()
         self.__vt_key: str = vt_key
+
 
     @property
     def url(self) -> tuple[str, ...]:
@@ -59,11 +61,8 @@ class VTUrl(VTAutomator):
         :return: dict[str, dict]
 
         """
-        if self.requests_amount_limit_counter < 500 and \
-                self.requests_per_minute_limit_counter < 4:
-
-            self.set_amount_limit_counter()
-            self.set_per_minute_limit_counter()
+        if self._restrictions():
+            self.set_limit_counters()
 
             headers: dict = {
                 "accept": "application/json",
@@ -80,6 +79,8 @@ class VTUrl(VTAutomator):
                 return req.json()
             else:
                 raise vt_exeptions.EmptyContentError()
+        else:
+            raise vt_exeptions.RestrictionsExclusion()
 
     def _post_req_url(self, _url) -> dict[str, dict]:
         """
@@ -89,22 +90,18 @@ class VTUrl(VTAutomator):
         :return: dict[str, dict]
 
         """
-        if self.requests_amount_limit_counter < 500 and \
-                self.requests_per_minute_limit_counter < 4:
-
-            self.set_amount_limit_counter()
-            self.set_per_minute_limit_counter()
+        if self._restrictions():
+            self.set_limit_counters()
 
             payload: str = f"url={_url}"
-
             headers: dict = {
                 "accept": "application/json",
                 "x-apikey": self.vt_key,
                 "content-type": "application/x-www-form-urlencoded"
             }
+
             # API request
             req: 'requests' = requests.post(self.post_vt_api_url, data=payload, headers=headers)
-
             if req.status_code >= 400:
                 raise vt_exeptions.RequestFailed()
             if bool(req.json()):
@@ -112,6 +109,8 @@ class VTUrl(VTAutomator):
                 return req.json()
             else:
                 raise vt_exeptions.EmptyContentError()
+        else:
+            raise vt_exeptions.RestrictionsExclusion()
 
     @VTAutomator.get_cache_url
     def _gets_a_url(self) -> int:
