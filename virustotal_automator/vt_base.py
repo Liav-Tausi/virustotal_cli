@@ -7,7 +7,7 @@ date: 1/12/2023
 from datetime import timedelta, date, datetime
 from abc import ABC, abstractmethod
 from threading import Lock
-import vt_exeptions
+import vt_exceptions
 import functools
 import requests
 import atexit
@@ -61,10 +61,17 @@ class VTAutomator(ABC):
         ref_date = date.today() + timedelta(weeks=4 * ref_cache_month)
         self.__ref_cache_month: date.month = ref_date.month
 
-        # threading lock
+        # threading locks
         self.lock1 = Lock()
         self.lock2 = Lock()
         self.lock3 = Lock()
+        self.lock4 = Lock()
+        self.lock5 = Lock()
+        self.lock6 = Lock()
+        self.lock7 = Lock()
+        self.lock8 = Lock()
+        self.lock9 = Lock()
+        self.lock10 = Lock()
 
         self.__cache_url_dict = dict()
         self.__cache_file_dict = dict()
@@ -183,30 +190,37 @@ class VTAutomator(ABC):
     # _____setters_____#
     # monthly limit
     def set_requests_monthly_amount_limit(self, limit: int) -> None:
-        self.__requests_monthly_amount_limit = limit
+        with self.lock4:
+            self.__requests_monthly_amount_limit = limit
 
     # monthly limit counter
     def set_requests_monthly_amount_limit_counter(self, limit: int) -> None:
-        self.__requests_monthly_amount_limit_counter = limit
+        with self.lock5:
+            self.__requests_monthly_amount_limit_counter = limit
 
     # daily limit
     def set_requests_daily_amount_limit(self, limit: int) -> None:
-        self.__requests_daily_amount_limit = limit
+        with self.lock6:
+            self.__requests_daily_amount_limit = limit
 
     # daily limit counter
     def set_requests_daily_amount_limit_counter(self, limit: int) -> None:
-        self.__requests_daily_amount_limit_counter = limit
+        with self.lock7:
+            self.__requests_daily_amount_limit_counter = limit
 
     # hourly limit
     def set_requests_hourly_amount_limit(self, limit: int) -> None:
-        self.__requests_hourly_amount_limit = limit
+        with self.lock8:
+            self.__requests_hourly_amount_limit = limit
 
     # hourly limit counter
     def set_requests_hourly_amount_limit_counter(self, limit: int) -> None:
-        self.__requests_hourly_amount_limit_counter = limit
+        with self.lock9:
+            self.__requests_hourly_amount_limit_counter = limit
 
     def set_api_key(self, key: str = None) -> None:
-        self.__api_key = key
+        with self.lock10:
+            self.__api_key = key
 
     # update counters
     def set_limit_counters(self) -> None:
@@ -317,12 +331,12 @@ class VTAutomator(ABC):
         req: 'requests' = requests.get(url=self.get_user_quota_summary + self.api_key + '/overall_quotas',
                                        headers=headers)
         if req.status_code >= 400:
-            raise vt_exeptions.RequestFailed()
+            raise vt_exceptions.RequestFailed()
         elif bool(req.json()):
             # return dict[str, dict]
             return req.json()
         else:
-            raise vt_exeptions.EmptyContentError()
+            raise vt_exceptions.EmptyContentError()
 
     def _get_allaowens(self):
         summary: dict = self._get_user_quora_summary()
