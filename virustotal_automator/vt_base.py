@@ -65,13 +65,7 @@ class VTAutomator(ABC):
         self.lock1 = Lock()
         self.lock2 = Lock()
         self.lock3 = Lock()
-        self.lock4 = Lock()
-        self.lock5 = Lock()
-        self.lock6 = Lock()
-        self.lock7 = Lock()
-        self.lock8 = Lock()
-        self.lock9 = Lock()
-        self.lock10 = Lock()
+
 
         self.__cache_url_dict = dict()
         self.__cache_file_dict = dict()
@@ -190,33 +184,27 @@ class VTAutomator(ABC):
     # _____setters_____#
     # monthly limit
     def set_requests_monthly_amount_limit(self, limit: int) -> None:
-        with self.lock4:
-            self.__requests_monthly_amount_limit = limit
+        self.__requests_monthly_amount_limit = limit
 
     # monthly limit counter
     def set_requests_monthly_amount_limit_counter(self, limit: int) -> None:
-        with self.lock5:
-            self.__requests_monthly_amount_limit_counter = limit
+        self.__requests_monthly_amount_limit_counter = limit
 
     # daily limit
     def set_requests_daily_amount_limit(self, limit: int) -> None:
-        with self.lock6:
-            self.__requests_daily_amount_limit = limit
+        self.__requests_daily_amount_limit = limit
 
     # daily limit counter
     def set_requests_daily_amount_limit_counter(self, limit: int) -> None:
-        with self.lock7:
-            self.__requests_daily_amount_limit_counter = limit
+        self.__requests_daily_amount_limit_counter = limit
 
     # hourly limit
     def set_requests_hourly_amount_limit(self, limit: int) -> None:
-        with self.lock8:
-            self.__requests_hourly_amount_limit = limit
+        self.__requests_hourly_amount_limit = limit
 
     # hourly limit counter
     def set_requests_hourly_amount_limit_counter(self, limit: int) -> None:
-        with self.lock9:
-            self.__requests_hourly_amount_limit_counter = limit
+        self.__requests_hourly_amount_limit_counter = limit
 
     def set_api_key(self, key: str = None) -> None:
         self.__api_key = key
