@@ -219,8 +219,7 @@ class VTAutomator(ABC):
             self.__requests_hourly_amount_limit_counter = limit
 
     def set_api_key(self, key: str = None) -> None:
-        with self.lock10:
-            self.__api_key = key
+        self.__api_key = key
 
     # update counters
     def set_limit_counters(self) -> None:
