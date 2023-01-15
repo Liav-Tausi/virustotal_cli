@@ -4,8 +4,6 @@ created by: liav tausi
 date: 1/12/2023
 """
 
-
-
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from vt_base import *
 import vt_exceptions
@@ -14,7 +12,6 @@ import requests
 import hashlib
 import time
 import os
-
 
 
 class VTFile(VTAutomator):
@@ -101,7 +98,6 @@ class VTFile(VTAutomator):
         else:
             raise vt_exceptions.RestrictionsExclusion()
 
-
     def _post_req_file(self, _file) -> dict[str, dict]:
         """
         sends a POST request to the VirusTotal API to upload a file for scanning.
@@ -169,8 +165,6 @@ class VTFile(VTAutomator):
         """
         return self.file[0], self._gets_a_file(self.file[0])
 
-
-
     def get_files(self) -> list[tuple[str, int]]:
         """
         creates a list of futures by submitting the method self._gets_a_file with each file
@@ -185,8 +179,6 @@ class VTFile(VTAutomator):
                 results.append((file, future.result()))
         return results
 
-
-
     def post_file(self, _file: str = None) -> bool:
         """
         function dedicated for POST action on file
@@ -198,8 +190,6 @@ class VTFile(VTAutomator):
             return True
         else:
             raise FileNotFoundError()
-
-
 
     def post_files(self) -> bool:
         """
@@ -214,7 +204,6 @@ class VTFile(VTAutomator):
                 results.append(future.result())
         if len(results) == len(self.file):
             return True
-
 
     def post_get_file(self, _file: str = None) -> tuple[str, int]:
         """
@@ -250,7 +239,6 @@ class VTFile(VTAutomator):
             for f in as_completed(future):
                 results.append(f.result())
         return results
-
 
     def _get_req_url(self, _url):
         pass
