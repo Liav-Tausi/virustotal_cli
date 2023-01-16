@@ -62,6 +62,6 @@ class CacheExpiredError(VTAutomatorError):
                          f" last_analysis: {last_analysis_utc},"
                          f" expire_date:{expire_date}")
 
-# raise vt_exeptions.CacheExpiredError(url=self.url,
+# raise vt_exceptions.CacheExpiredError(url=self.url,
 #                                                      last_analysis_utc=last_analysis_utc,
 #                                                         expire_date=expire_date)
