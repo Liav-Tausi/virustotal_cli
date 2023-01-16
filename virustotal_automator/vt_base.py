@@ -43,7 +43,7 @@ class VTAutomator(ABC):
         # registering a save_data function to be called when the program exits
 
         self.__api_key = self.api_key
-        self._get_allaowens()
+        self._get_params()
 
         self.__requests_monthly_amount_limit = self.requests_monthly_amount_limit
         self.__requests_monthly_amount_limit_counter = self.requests_monthly_amount_limit_counter
@@ -239,7 +239,7 @@ class VTAutomator(ABC):
         else:
             raise vt_exceptions.EmptyContentError()
 
-    def _get_allaowens(self):
+    def _get_params(self):
         summary: dict = self._get_user_quora_summary()
         if summary is not None:
             hourly_info = summary.get("data")["api_requests_hourly"]
