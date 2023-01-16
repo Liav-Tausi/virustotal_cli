@@ -10,12 +10,9 @@ from threading import Lock
 import vt_exceptions
 import functools
 import requests
-import atexit
 import pytz
 import json
 import os
-
-
 
 
 class VTAutomator(ABC):
@@ -42,8 +39,9 @@ class VTAutomator(ABC):
         It also sets the requests amount and requests per minute limits for interacting with the VirusTotal API.
         param ref_cache_month: cache refresh rate
         """
+
         # registering a save_data function to be called when the program exits
-        atexit.register(self.save_data)
+
         self.__api_key = self.api_key
         self._get_allaowens()
 
@@ -66,7 +64,6 @@ class VTAutomator(ABC):
         self.lock2 = Lock()
         self.lock3 = Lock()
 
-
         self.__cache_url_dict = dict()
         self.__cache_file_dict = dict()
 
@@ -74,18 +71,24 @@ class VTAutomator(ABC):
         try:
             # open and read the data from two json files 'vt_cache_url.json' and 'vt_cache_file.json'
             if not os.path.exists('vt_cache_url.json'):
-                with open('vt_cache_url.json', 'x') as fh:
-                    pass
+                with open('vt_cache_url.json', 'a') as fh:
+                    data: dict = dict()
+                    json.dump(data, fh)
             else:
                 with open('vt_cache_url.json', 'r') as fh1:
-                    self.__cache_url_dict = json.load(fh1)
+                    data = json.load(fh1)
+                    if isinstance(data, dict):
+                        self.__cache_url_dict = data
 
             if not os.path.exists('vt_cache_file.json'):
-                with open('vt_cache_file.json', 'x') as fh:
-                    pass
+                with open('vt_cache_file.json', 'a') as fh:
+                    data: dict = dict()
+                    json.dump(data, fh)
             else:
                 with open('vt_cache_file.json', 'r') as fh2:
-                    self.__cache_file_dict = json.load(fh2)
+                    data = json.load(fh2)
+                    if isinstance(data, dict):
+                        self.__cache_file_dict = data
 
         except FileNotFoundError:
             self.__cache_url_dict = dict()
@@ -182,6 +185,7 @@ class VTAutomator(ABC):
         pass
 
     # _____setters_____#
+
     # monthly limit
     def set_requests_monthly_amount_limit(self, limit: int) -> None:
         self.__requests_monthly_amount_limit = limit
@@ -216,17 +220,50 @@ class VTAutomator(ABC):
             self.__requests_daily_amount_limit_counter += 1
             self.__requests_hourly_amount_limit_counter += 1
 
-    # update dict from url decorator
-    def _update_cache_url_dict(self, url_inx, result) -> None:
-        with self.lock2:
-            self.__cache_url_dict[url_inx] = result
+    # ____body____ #
 
-    # update dict from file decorator
-    def _update_cache_file_dict(self, path, result) -> None:
-        with self.lock3:
-            self.__cache_file_dict[path] = result
+    def _get_user_quora_summary(self) -> dict[str, dict]:
+
+        headers: dict = {
+            "accept": "application/json",
+            "x-apikey": self.api_key
+        }
+        # API request
+        req: 'requests' = requests.get(url=self.get_user_quota_summary + self.api_key + '/overall_quotas',
+                                       headers=headers)
+        if req.status_code >= 400:
+            raise vt_exceptions.RequestFailed()
+        elif bool(req.json()):
+            # return dict[str, dict]
+            return req.json()
+        else:
+            raise vt_exceptions.EmptyContentError()
+
+    def _get_allaowens(self):
+        summary: dict = self._get_user_quora_summary()
+        if summary is not None:
+            hourly_info = summary.get("data")["api_requests_hourly"]
+            self.set_requests_hourly_amount_limit(hourly_info["user"]["allowed"])
+            self.set_requests_hourly_amount_limit_counter(hourly_info["user"]["used"])
+
+            daily_info = summary.get("data")["api_requests_daily"]
+            self.set_requests_daily_amount_limit(daily_info["user"]["allowed"])
+            self.set_requests_daily_amount_limit_counter(daily_info["user"]["used"])
+
+            monthly_info = summary.get("data")["api_requests_monthly"]
+            self.set_requests_monthly_amount_limit(monthly_info["user"]["allowed"])
+            self.set_requests_monthly_amount_limit_counter(monthly_info["user"]["used"])
+
+    def _restrictions(self) -> bool:
+        if self.requests_hourly_amount_limit_counter < self.requests_hourly_amount_limit \
+                or self.requests_daily_amount_limit_counter < self.requests_daily_amount_limit \
+                or self.requests_monthly_amount_limit_counter < self.requests_monthly_amount_limit:
+            return True
+        else:
+            return False
 
     # ______decorators______ #
+
     @staticmethod
     def get_cache_url(func):
         """
@@ -297,56 +334,48 @@ class VTAutomator(ABC):
 
         return wrapper
 
-    def save_data(self) -> None:
+    @staticmethod
+    def save_cache_url(func):
         """
-        save data in cache to 'vt_cache_url.json' and 'vt_cache_file.json'.
-        :return: None
+        this decorator uploads the self.cache_url_dict to a json file for every new url
+        :param func:
+        :return:
         """
-        with open('vt_cache_url.json', 'w') as fh1:
-            json.dump(self.cache_url_dict, fh1)
 
-        with open('vt_cache_file.json', 'w') as fh2:
-            json.dump(self.cache_file_dict, fh2)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            finally:
+                with open('vt_cache_url.json', 'w') as fh:
+                    json.dump(args[0].cache_url_dict, fh)
 
-    def _get_user_quora_summary(self) -> dict[str, dict]:
+        return wrapper
 
-        headers: dict = {
-            "accept": "application/json",
-            "x-apikey": self.api_key
-        }
-        # API request
-        req: 'requests' = requests.get(url=self.get_user_quota_summary + self.api_key + '/overall_quotas',
-                                       headers=headers)
-        if req.status_code >= 400:
-            raise vt_exceptions.RequestFailed()
-        elif bool(req.json()):
-            # return dict[str, dict]
-            return req.json()
-        else:
-            raise vt_exceptions.EmptyContentError()
+    @staticmethod
+    def save_cache_file(func):
+        """
+        this decorator uploads the self.cache_file_dict to a json file for every new file
+        :param func:
+        :return:
+        """
 
-    def _get_allaowens(self):
-        summary: dict = self._get_user_quora_summary()
-        if summary is not None:
-            hourly_info = summary.get("data")["api_requests_hourly"]
-            self.set_requests_hourly_amount_limit(hourly_info["user"]["allowed"])
-            self.set_requests_hourly_amount_limit_counter(hourly_info["user"]["used"])
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            finally:
+                with open('vt_cache_file.json', 'w') as fh:
+                    json.dump(args[0].cache_file_dict, fh)
 
-            daily_info = summary.get("data")["api_requests_daily"]
-            self.set_requests_daily_amount_limit(daily_info["user"]["allowed"])
-            self.set_requests_daily_amount_limit_counter(daily_info["user"]["used"])
+        return wrapper
 
-            monthly_info = summary.get("data")["api_requests_monthly"]
-            self.set_requests_monthly_amount_limit(monthly_info["user"]["allowed"])
-            self.set_requests_monthly_amount_limit_counter(monthly_info["user"]["used"])
+    # update dict from url decorator
+    @save_cache_url
+    def _update_cache_url_dict(self, url_inx, result) -> None:
+        with self.lock2:
+            self.__cache_url_dict[url_inx] = result
 
-    def _restrictions(self) -> bool:
-        if self.requests_hourly_amount_limit_counter < self.requests_hourly_amount_limit \
-                or self.requests_daily_amount_limit_counter < self.requests_daily_amount_limit \
-                or self.requests_monthly_amount_limit_counter < self.requests_monthly_amount_limit:
-            return True
-        else:
-            return False
-
-
-
+    # update dict from file decorator
+    @save_cache_file
+    def _update_cache_file_dict(self, path, result) -> None:
+        with self.lock3:
+            self.__cache_file_dict[path] = result
