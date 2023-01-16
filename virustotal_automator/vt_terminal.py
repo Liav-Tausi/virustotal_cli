@@ -112,7 +112,6 @@ def main() -> tuple[str, int] | str | list[tuple]:
     group.add_argument('--password', help='optional file password')
     group.add_argument('--url', nargs='+', help='a list of URLs')
 
-
     args = parser.parse_args()
     scanning: Scan = Scan(args.type, args.vt_key, args.workers)
     return scanning.scan(file_paths=args.file, urls=args.url, method=args.method, password=args.password)
