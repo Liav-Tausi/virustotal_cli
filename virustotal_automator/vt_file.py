@@ -16,7 +16,7 @@ import os
 
 class VTFile(VTAutomator):
 
-    def __init__(self, file: tuple['os.path', ...], vt_key: str, password: str = None, workers: int = 7):
+    def __init__(self, file: tuple[str, ...], vt_key: str, password: str = None, workers: int = 7):
         """
         sets the initial values for the file(s) to be scanned, the VirusTotal API key,
         the password for the file (if any) and the number of worker threads to use.
@@ -30,9 +30,9 @@ class VTFile(VTAutomator):
         self.set_api_key(vt_key)
         super().__init__()
         for every_file in file:
-            if not os.path.exists(every_file):
+            if not os.path.isfile(every_file):
                 raise vt_exceptions.FileError()
-            self.__file: tuple['os.path', ...] = file
+            self.__file: tuple[str, ...] = file
 
         if not isinstance(vt_key, str) or not vt_key:
             raise vt_exceptions.ApiKeyError()
@@ -46,8 +46,10 @@ class VTFile(VTAutomator):
             raise vt_exceptions.ThreadingError()
         self.__workers: int = workers
 
+
+
     @property
-    def file(self) -> tuple['os.path', ...]:
+    def file(self) -> tuple[str, ...]:
         return self.__file
 
     @property
@@ -61,6 +63,8 @@ class VTFile(VTAutomator):
     @property
     def workers(self) -> int:
         return self.__workers
+
+
 
     def _get_req_file(self, _file) -> dict[str, dict]:
         """
@@ -86,7 +90,7 @@ class VTFile(VTAutomator):
             hex_hash = hashed.hexdigest()
 
             # API request
-            req: 'requests' = requests.get(self.get_vt_api_file + hex_hash, headers=headers)
+            req = requests.get(self.get_vt_api_file + hex_hash, headers=headers)
 
             if req.status_code >= 400:
                 raise vt_exceptions.RequestFailed()
@@ -97,6 +101,8 @@ class VTFile(VTAutomator):
                 raise vt_exceptions.EmptyContentError()
         else:
             raise vt_exceptions.RestrictionsExclusion()
+
+
 
     def _post_req_file(self, _file) -> dict[str, dict]:
         """
@@ -145,6 +151,8 @@ class VTFile(VTAutomator):
         else:
             raise vt_exceptions.RestrictionsExclusion()
 
+
+
     @VTAutomator.get_cache_file
     def _gets_a_file(self) -> int:
         """
@@ -159,12 +167,15 @@ class VTFile(VTAutomator):
             raise FileNotFoundError()
 
 
+
     def get_file(self) -> tuple[str, int]:
         """
         function dedicated for GET action on one file
         :return: tuple[str, int]
         """
         return self.file[0], self._gets_a_file(self.file[0])
+
+
 
     def get_files(self) -> list[tuple[str, int]]:
         """
@@ -180,10 +191,11 @@ class VTFile(VTAutomator):
                 results.append((file, future.result()))
         return results
 
-    def post_file(self, _file: str = None) -> bool:
+
+
+    def post_file(self, _file = None) -> bool:
         """
         function dedicated for POST action on file
-        :param _file:
         :return: 'analysis'
         """
         rep: str = self._post_req_file(_file).get('data')['type']
@@ -191,6 +203,8 @@ class VTFile(VTAutomator):
             return True
         else:
             raise FileNotFoundError()
+
+
 
     def post_files(self) -> bool:
         """
@@ -206,6 +220,8 @@ class VTFile(VTAutomator):
         if len(results) == len(self.file):
             return True
 
+
+
     def post_get_file(self, _file: str = None) -> tuple[str, int]:
         """
         used to both upload and retrieve the scan results of a file.
@@ -218,13 +234,14 @@ class VTFile(VTAutomator):
         if _file is None:
             _url = self.file
         for _ in self.file:
-            self.post_file(_file)
+            self.post_file()
             for _ in range(1):
                 res_code = self._gets_a_file(_file)
                 if isinstance(res_code, int):
                     return _file, res_code
                 else:
                     time.sleep(20)
+
 
     def post_get_files(self) -> list[tuple]:
         """
@@ -240,6 +257,8 @@ class VTFile(VTAutomator):
             for f in as_completed(future):
                 results.append(f.result())
         return results
+
+
 
     def _get_req_url(self, _url):
         pass
