@@ -158,6 +158,7 @@ class VTFile(VTAutomator):
         else:
             raise FileNotFoundError()
 
+
     def get_file(self) -> tuple[str, int]:
         """
         function dedicated for GET action on one file
