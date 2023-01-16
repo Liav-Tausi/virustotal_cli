@@ -159,6 +159,7 @@ class VTFile(VTAutomator):
         decorator function that retrieves the file information from the cache if it exists,
         otherwise it calls the _get_req_file function to get the information from the API.
         :return: int
+
         """
         rep: int = self['data']['attributes']['reputation']
         if rep is not None:
