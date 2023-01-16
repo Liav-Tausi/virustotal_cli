@@ -40,6 +40,7 @@ class VTUrl(VTAutomator):
         self.__vt_key: str = vt_key
 
 
+
     @property
     def url(self) -> tuple[str, ...]:
         return self.__url
@@ -53,25 +54,25 @@ class VTUrl(VTAutomator):
         return self.__vt_key
 
 
+
     def _get_req_url(self, _url) -> dict[str, dict]:
         """
         sends a GET request to a specific URL and returns the response in the form of a dictionary.
         It uses the urls base64 hash as the identifier.
         raises exceptions if the request fails or returns empty content.
-        :param _url: a url
+        :param _url: an url
         :return: dict[str, dict]
 
         """
         if self._restrictions():
             self.set_limit_counters()
-
             headers: dict = {
                 "accept": "application/json",
                 "x-apikey": self.vt_key
             }
             # API request
             url_id: str = base64.urlsafe_b64encode(f'{_url}'.encode()).decode().strip('=')
-            req: 'requests' = requests.get(url=self.get_vt_api_url + url_id, headers=headers)
+            req = requests.get(url=self.get_vt_api_url + url_id, headers=headers)
 
             if req.status_code >= 400:
                 raise vt_exceptions.RequestFailed()
@@ -83,17 +84,18 @@ class VTUrl(VTAutomator):
         else:
             raise vt_exceptions.RestrictionsExclusion()
 
+
+
     def _post_req_url(self, _url) -> dict[str, dict]:
         """
         sends a POST request to a specific URL and returns the response in the form of a dictionary.
         raises exceptions if the request fails or returns empty content.
-        :param _url: a url
+        :param _url: an url
         :return: dict[str, dict]
 
         """
         if self._restrictions():
             self.set_limit_counters()
-
             payload: str = f"url={_url}"
             headers: dict = {
                 "accept": "application/json",
@@ -102,7 +104,7 @@ class VTUrl(VTAutomator):
             }
 
             # API request
-            req: 'requests' = requests.post(self.post_vt_api_url, data=payload, headers=headers)
+            req = requests.post(self.post_vt_api_url, data=payload, headers=headers)
             if req.status_code >= 400:
                 raise vt_exceptions.RequestFailed()
             if bool(req.json()):
@@ -112,6 +114,8 @@ class VTUrl(VTAutomator):
                 raise vt_exceptions.EmptyContentError()
         else:
             raise vt_exceptions.RestrictionsExclusion()
+
+
 
     @VTAutomator.get_cache_url
     def _gets_a_url(self) -> int:
@@ -154,18 +158,19 @@ class VTUrl(VTAutomator):
 
 
 
-    def post_url(self, _url: str = None) -> bool:
+    def post_url(self, _url = None) -> bool:
         """
         function dedicated for POST action on file
-        :param _url: an url
         :return: 'analysis'
 
         """
         rep: str = self._post_req_url(_url).get('data')['type']
         if rep == 'analysis':
-            return True
+             return True
         else:
             raise FileNotFoundError()
+
+
 
     def post_urls(self) -> bool:
         """
@@ -181,6 +186,8 @@ class VTUrl(VTAutomator):
         if len(results) == len(self.url):
             return True
 
+
+
     def post_get_url(self, _url: str = None) -> tuple[str, int]:
         """
         used to both upload and retrieve the scan results of an url.
@@ -193,13 +200,15 @@ class VTUrl(VTAutomator):
         if _url is None:
             _url = self.url
         for _ in self.url:
-            self.post_url(_url)
+            self.post_url()
             for _ in range(1):
                 res_code = self._gets_a_url(_url)
                 if isinstance(res_code, int):
                     return _url, res_code
                 else:
                     time.sleep(20)
+
+
 
     def post_get_urls(self) -> list[tuple]:
         """
@@ -215,6 +224,8 @@ class VTUrl(VTAutomator):
             for f in as_completed(future):
                 results.append(f.result())
         return results
+
+
 
     def _get_req_file(self, _file):
         pass
