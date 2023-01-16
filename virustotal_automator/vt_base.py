@@ -229,8 +229,8 @@ class VTAutomator(ABC):
             "x-apikey": self.api_key
         }
         # API request
-        req: 'requests' = requests.get(url=self.get_user_quota_summary + self.api_key + '/overall_quotas',
-                                       headers=headers)
+        req = requests.get(url=self.get_user_quota_summary + self.api_key + '/overall_quotas',
+                           headers=headers)
         if req.status_code >= 400:
             raise vt_exceptions.RequestFailed()
         elif bool(req.json()):
