@@ -30,7 +30,7 @@ class VTFile(VTAutomator):
         self.set_api_key(vt_key)
         super().__init__()
         for every_file in file:
-            if not os.path.isfile(every_file):
+            if not os.path.exists(every_file):
                 raise vt_exceptions.FileError()
             self.__file: tuple[str, ...] = file
 
