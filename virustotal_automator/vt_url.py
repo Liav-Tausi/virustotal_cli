@@ -52,6 +52,7 @@ class VTUrl(VTAutomator):
     def vt_key(self) -> str:
         return self.__vt_key
 
+
     def _get_req_url(self, _url) -> dict[str, dict]:
         """
         sends a GET request to a specific URL and returns the response in the form of a dictionary.
@@ -125,6 +126,7 @@ class VTUrl(VTAutomator):
             return rep
         else:
             raise FileNotFoundError()
+
 
     def get_url(self) -> tuple[str, int]:
         """
