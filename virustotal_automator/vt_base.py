@@ -269,7 +269,7 @@ class VTAutomator(ABC):
         """
         The decorator checks if the given url is present in the __cache_url_dict,
         if present it fetches the dict path, last analysis date and time, current date and time and expire date.
-        If the current date and time is greater than or equal to the expire date, it removes the url from the cache.
+        If the current date and time is greater than or equal to the expired date, it removes the url from the cache.
         Else it returns the result of the original function by passing the dict path.
         f the url is not present in the dict, it calls the _get_req_url method
         and updates the cache dict by calling the _update_cache_url_dict method and returns the result of the original
@@ -304,7 +304,7 @@ class VTAutomator(ABC):
         """
         The decorator checks if the given file is present in the __cache_file_dict,
         if present it fetches the dict path, last analysis date and time, current date and time and expire date.
-        If the current date and time is greater than or equal to the expire date, it removes the file from the cache.
+        If the current date and time is greater than or equal to the expired date, it removes the file from the cache.
         Else it returns the result of the original function by passing the dict path.
         If the file is not present in the dict, it calls the _get_req_file method
         and updates the cache dict by calling the _update_cache_file_dict method and returns the result of the original
