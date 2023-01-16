@@ -56,7 +56,7 @@ class VTUrl(VTAutomator):
     def _get_req_url(self, _url) -> dict[str, dict]:
         """
         sends a GET request to a specific URL and returns the response in the form of a dictionary.
-        It uses the url's base64 hash as the identifier.
+        It uses the urls base64 hash as the identifier.
         raises exceptions if the request fails or returns empty content.
         :param _url: a url
         :return: dict[str, dict]
