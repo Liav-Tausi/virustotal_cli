@@ -6,9 +6,11 @@ date: 1/12/2023
 
 
 
-from vt_file import *
-from vt_url import *
 import argparse
+
+import vt_exceptions
+from vt_file import VTFile
+from vt_url import VTUrl
 
 
 class Scan:
