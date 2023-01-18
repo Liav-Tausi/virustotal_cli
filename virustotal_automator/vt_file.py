@@ -4,14 +4,18 @@ created by: liav tausi
 date: 1/12/2023
 """
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from vt_base import *
-import vt_exceptions
-import mimetypes
-import requests
 import hashlib
-import time
+import mimetypes
 import os
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import requests
+import vt_exceptions
+from vt_base import VTAutomator
+
+
+
 
 
 class VTFile(VTAutomator):
