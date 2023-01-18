@@ -4,12 +4,15 @@ created by: liav tausi
 date: 1/12/2023
 """
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from vt_base import *
-import vt_exceptions
-import requests
 import base64
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import requests
+import vt_exceptions
+from vt_base import VTAutomator
+
+
 
 
 class VTUrl(VTAutomator):
