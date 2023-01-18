@@ -45,6 +45,9 @@ class EmptyContentError(VTAutomatorError):
     def __init__(self):
         super().__init__("Empty return.")
 
+class MethodError(VTAutomatorError):
+    def __init__(self):
+            super().__init__("Method Error.")
 
 class ThreadingError(VTAutomatorError):
     def __init__(self):
