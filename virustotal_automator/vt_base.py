@@ -15,8 +15,11 @@ import pytz
 import requests
 import vt_exceptions
 
+# VTAutomator is a wrapper for virustotal,
+# this program is an CLI running scanner that allows users to scan multiple files and URLs for potential malware and viruses.
+# It utilizes the VirusTotal database API and retrieve scan results and reputation scores for the given files or URLs.
 
-
+# notice_ that you'll have to have a VirusTotal API key!
 
 class VTAutomator(ABC):
     """
