@@ -90,7 +90,7 @@ class Scan:
         elif method == 'post_get_urls':
             return vt_url.post_get_urls()
         else:
-            raise ValueError()
+            raise vt_exceptions.MethodError()
 
 
 
