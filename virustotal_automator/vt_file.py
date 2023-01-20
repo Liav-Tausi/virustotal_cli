@@ -11,8 +11,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
-from virustotal_automator import vt_exceptions
-from virustotal_automator.vt_base import VTAutomator, is_letters_and_digits
+import vt_exceptions
+from vt_base import VTAutomator, is_letters_and_digits
 
 
 class VTFile(VTAutomator):
@@ -105,7 +105,7 @@ class VTFile(VTAutomator):
 
 
 
-    def _post_req_file(self, _file) -> dict[str, dict]:
+    def _post_req_file(self, _file, _id = None) -> dict[str, dict]:
         """
         sends a POST request to the VirusTotal API to upload a file for scanning.
         It also includes the password for the file (if any) in the request.
@@ -128,17 +128,19 @@ class VTFile(VTAutomator):
                 "x-apikey": self.vt_key
             }
 
-            # bigger files endpoint
-            if (os.path.getsize(_file) / 1048576) >= 24:
-                api = r'https://www.virustotal.com/api/v3/files/upload_url'
-            else:
-                api = self.post_vt_api_file
+            if (_id is None) or (len(_id) < 50):
+                # bigger files endpoint
+                if (os.path.getsize(_file) / 1048576) >= 24:
+                    api = r'https://www.virustotal.com/api/v3/files/upload_url'
+                else:
+                    api = self.post_vt_api_file
 
-            # API request
-            if self.password is None:
-                req = requests.post(api, files=files, headers=headers)
+            # whether if rescan
             else:
-                req = requests.post(api, data=payload, files=files, headers=headers)
+                payload = None
+                api = self.post_vt_api_file_rescan + _id + '/analyse'
+            # API request
+            req = requests.post(api, data=payload, files=files, headers=headers)
 
             fh.close()
 
@@ -195,11 +197,13 @@ class VTFile(VTAutomator):
 
 
 
-    def post_file(self, _file = None) -> bool:
+    def post_file(self, _file = None) -> True:
         """
         function dedicated for POST action on file
         :return: 'analysis'
         """
+        if _file is None:
+            _file = self.file[0]
         rep: str = self._post_req_file(_file).get('data')['type']
         if rep == 'analysis':
             return True
@@ -208,7 +212,7 @@ class VTFile(VTAutomator):
 
 
 
-    def post_files(self) -> bool:
+    def post_files(self) -> True:
         """
         creates a list of futures by submitting the method self.post_file with each file
         :return: list[tuple[str, int]]
@@ -222,6 +226,40 @@ class VTFile(VTAutomator):
         if len(results) == len(self.file):
             return True
 
+    def post_rescan(self, _file = None) -> True:
+        """
+        function dedicated for POST "rescan" action on file
+        force virustotal for analysis
+        :param _file:
+        :return: True
+        """
+        if _file is None:
+            _url = self.file[0]
+        if _file in self.cache_url_dict:
+            _id: str = self.cache_url_dict[_file]['data']['id']
+            rep: str = self._post_req_file(_file, _id = _id).get('data')['type']
+            if rep == 'analysis':
+                return True
+            else:
+                raise FileNotFoundError()
+        else:
+            raise vt_exceptions.RescanError()
+
+    def post_rescans(self) -> True:
+        """
+        creates a list of futures by submitting the method self.post_rescan with each file
+        :return: list[tuple[str, int]]
+
+        """
+        results: list = list()
+        with ThreadPoolExecutor(self.workers) as executor:
+            futures = [executor.submit(self.post_rescan, _file) for _file in self.file]
+            for future in as_completed(futures):
+                results.append(future.result())
+        if len(results) == len(self.file):
+            return True
+        else:
+            raise FileNotFoundError()
 
 
     def post_get_file(self, _file: str = None) -> tuple[str, int]:
