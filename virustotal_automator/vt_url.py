@@ -11,8 +11,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import validators
 
-from virustotal_automator import vt_exceptions
-from virustotal_automator.vt_base import VTAutomator, is_letters_and_digits
+import vt_exceptions
+from vt_base import VTAutomator, is_letters_and_digits
 
 
 class VTUrl(VTAutomator):
@@ -89,7 +89,7 @@ class VTUrl(VTAutomator):
 
 
 
-    def _post_req_url(self, _url) -> dict[str, dict]:
+    def _post_req_url(self, _url, _id = None) -> dict[str, dict]:
         """
         sends a POST request to a specific URL and returns the response in the form of a dictionary.
         raises exceptions if the request fails or returns empty content.
@@ -99,15 +99,21 @@ class VTUrl(VTAutomator):
         """
         if self._restrictions():
             self.set_limit_counters()
-            payload: str = f"url={_url}"
+            payload: str | None = f"url={_url}"
             headers: dict = {
                 "accept": "application/json",
                 "x-apikey": self.vt_key,
                 "content-type": "application/x-www-form-urlencoded"
             }
 
+            if (_id is None) or (len(_id) < 50):
+                api = self.post_vt_api_url
+            # whether if rescan
+            else:
+                payload = None
+                api = self.post_vt_api_url_rescan + _id + '/analyse'
             # API request
-            req = requests.post(self.post_vt_api_url, data=payload, headers=headers)
+            req = requests.post(api, data=payload, headers=headers)
             if req.status_code >= 400:
                 raise vt_exceptions.RequestFailed()
             if bool(req.json()):
@@ -161,12 +167,14 @@ class VTUrl(VTAutomator):
 
 
 
-    def post_url(self, _url = None) -> bool:
+    def post_url(self, _url = None) -> True:
         """
-        function dedicated for POST action on file
+        function dedicated for POST action on url
         :return: 'analysis'
 
         """
+        if _url is None:
+            _url = self.url[0]
         rep: str = self._post_req_url(_url).get('data')['type']
         if rep == 'analysis':
              return True
@@ -175,7 +183,7 @@ class VTUrl(VTAutomator):
 
 
 
-    def post_urls(self) -> bool:
+    def post_urls(self) -> True:
         """
         creates a list of futures by submitting the method self.post_url with each url
         :return: list[tuple[str, int]]
@@ -188,7 +196,44 @@ class VTUrl(VTAutomator):
                 results.append(future.result())
         if len(results) == len(self.url):
             return True
+        else:
+            raise FileNotFoundError()
 
+
+    def post_rescan(self, _url = None) -> True:
+        """
+        function dedicated for POST "rescan" action on url
+        force virustotal for analysis
+        :param _url:
+        :return:
+        """
+        if _url is None:
+            _url = self.url[0]
+        if _url in self.cache_url_dict:
+            _id: str = self.cache_url_dict[_url]['data']['id']
+            rep: str = self._post_req_url(_url, _id=_id).get('data')['type']
+            if rep == 'analysis':
+                return True
+            else:
+                raise FileNotFoundError()
+        else:
+            raise vt_exceptions.RescanError()
+
+
+
+    def post_rescans(self) -> True:
+        """
+        creates a list of futures by submitting the method self.post_rescan with each url
+        :return: list[tuple[str, int]]
+
+        """
+        results: list = list()
+        with ThreadPoolExecutor(self.workers) as executor:
+            futures = [executor.submit(self.post_rescan, _url) for _url in self.url]
+            for future in as_completed(futures):
+                results.append(future.result())
+        if len(results) == len(self.url):
+            return True
 
 
     def post_get_url(self, _url: str = None) -> tuple[str, int]:
@@ -235,3 +280,5 @@ class VTUrl(VTAutomator):
 
     def _post_req_file(self, _file):
         pass
+
+
