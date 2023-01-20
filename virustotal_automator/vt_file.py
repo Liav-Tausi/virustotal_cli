@@ -11,11 +11,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
-import vt_exceptions
-from vt_base import VTAutomator
-
-
-
+from virustotal_automator import vt_exceptions
+from virustotal_automator.vt_base import VTAutomator, is_letters_and_digits
 
 
 class VTFile(VTAutomator):
@@ -38,7 +35,7 @@ class VTFile(VTAutomator):
                 raise vt_exceptions.FileError()
             self.__file: tuple[str, ...] = file
 
-        if not isinstance(vt_key, str) or not vt_key:
+        if not is_letters_and_digits(vt_key):
             raise vt_exceptions.ApiKeyError()
         self.__vt_key: str = vt_key
 
