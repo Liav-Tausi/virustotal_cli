@@ -59,6 +59,11 @@ class FilePasswordError(VTAutomatorError):
         super().__init__("Password Error.")
 
 
+class RescanError(VTAutomatorError):
+    def __init__(self):
+        super().__init__("Not in cache, send a post request.")
+
+
 class CacheExpiredError(VTAutomatorError):
     def __init__(self, url: str, last_analysis_utc: 'datetime', expire_date: 'datetime'):
         super().__init__(f"Cache expired. url:{url},"
