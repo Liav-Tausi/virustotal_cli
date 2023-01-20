@@ -65,6 +65,10 @@ class Scan:
             return vt_file.post_file()
         elif method == 'post_files':
             return vt_file.get_files()
+        elif method == 'post_rescan':
+            return vt_file.post_rescan()
+        elif method == 'post_rescans':
+            return vt_file.post_rescans()
         elif method == 'post_get_file':
             return vt_file.post_get_file()
         elif method == 'post_get_files':
@@ -87,6 +91,10 @@ class Scan:
             return vt_url.post_url()
         elif method == 'post_urls':
             return vt_url.post_urls()
+        elif method == 'post_rescan':
+            return vt_url.post_rescan()
+        elif method == 'post_rescans':
+            return vt_url.post_rescans()
         elif method == 'post_get_url':
             return vt_url.post_get_url()
         elif method == 'post_get_urls':
