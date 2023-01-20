@@ -7,19 +7,27 @@ date: 1/12/2023
 import functools
 import json
 import os
+import re
 from abc import ABC, abstractmethod
 from datetime import date, datetime, timedelta
 from threading import Lock
 
 import pytz
 import requests
-import vt_exceptions
+
+from virustotal_automator import vt_exceptions
+
 
 # VTAutomator is a wrapper for virustotal,
 # this program is an CLI running scanner that allows users to scan multiple files and URLs for potential malware and viruses.
 # It utilizes the VirusTotal database API and retrieve scan results and reputation scores for the given files or URLs.
 
 # notice_ that you'll have to have a VirusTotal API key!
+
+# validation for api_key
+def is_letters_and_digits(key):
+    return bool(re.match("^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]+$", key))
+
 
 class VTAutomator(ABC):
     """
@@ -217,6 +225,8 @@ class VTAutomator(ABC):
         self.__requests_hourly_amount_limit_counter = limit
 
     def set_api_key(self, key: str = None) -> None:
+        if not is_letters_and_digits(key):
+            raise vt_exceptions.ApiKeyError()
         self.__api_key = key
 
     # update counters
