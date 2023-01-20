@@ -9,10 +9,10 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
-import vt_exceptions
-from vt_base import VTAutomator
+import validators
 
-
+from virustotal_automator import vt_exceptions
+from virustotal_automator.vt_base import VTAutomator, is_letters_and_digits
 
 
 class VTUrl(VTAutomator):
@@ -34,11 +34,11 @@ class VTUrl(VTAutomator):
         self.__workers: int = workers
 
         for every_url in url:
-            if not isinstance(every_url, str):
+            if not validators.url(every_url):
                 raise vt_exceptions.UrlError()
             self.__url: tuple[str, ...] = url
 
-        if not isinstance(vt_key, str) or not vt_key:
+        if not is_letters_and_digits(vt_key):
             raise vt_exceptions.ApiKeyError()
         self.__vt_key: str = vt_key
 
