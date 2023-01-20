@@ -15,7 +15,7 @@ from threading import Lock
 import pytz
 import requests
 
-from virustotal_automator import vt_exceptions
+import vt_exceptions
 
 
 # VTAutomator is a wrapper for virustotal,
@@ -40,9 +40,15 @@ class VTAutomator(ABC):
     __GET_VT_API_URL: str = r'https://www.virustotal.com/api/v3/urls/'
     __POST_VT_API_URL: str = r'https://www.virustotal.com/api/v3/urls'
 
+    # ___url_rescan____ #
+    __POST_VT_API_URL_RESCAN: str = r'https://www.virustotal.com/api/v3/urls/'
+
     # _____files_____ #
     __GET_VT_API_FILE: str = r'https://www.virustotal.com/api/v3/files/'
     __POST_VT_API_FILE: str = r'https://www.virustotal.com/api/v3/files'
+
+    # ___file_rescan____ #
+    __POST_VT_API_FILE_RESCAN: str = r'https://www.virustotal.com/api/v3/files/'
 
     def __init__(self, ref_cache_month: int = 1):
         """
@@ -127,12 +133,22 @@ class VTAutomator(ABC):
         return self.__POST_VT_API_URL
 
     @property
+    def post_vt_api_url_rescan(self) -> str:
+        return self.__POST_VT_API_URL_RESCAN
+
+    @property
     def get_vt_api_file(self) -> str:
         return self.__GET_VT_API_FILE
 
     @property
     def post_vt_api_file(self) -> str:
         return self.__POST_VT_API_FILE
+
+    @property
+    def post_vt_api_file_rescan(self) -> str:
+        return self.__POST_VT_API_FILE_RESCAN
+
+
 
     @property
     def requests_monthly_amount_limit(self) -> int:
