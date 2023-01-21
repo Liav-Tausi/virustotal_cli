@@ -7,6 +7,7 @@ date: 1/12/2023
 import base64
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import partial
 
 import requests
 import validators
@@ -166,7 +167,7 @@ class VTUrl(VTAutomator):
         if rep is not None:
             return rep
         else:
-            raise FileNotFoundError()
+            raise vt_exceptions.UrlNotFoundError()
 
 
     def get_url(self) -> tuple[str, int]:
@@ -191,7 +192,10 @@ class VTUrl(VTAutomator):
             for future in as_completed(futures):
                 url = self.url[futures.index(future)]
                 results.append((url, future.result()))
-        return results
+        if len(results) == len(self.url):
+            return results
+        else:
+            vt_exceptions.UrlNotFoundError()
 
 
 
@@ -207,11 +211,11 @@ class VTUrl(VTAutomator):
         if rep == 'analysis':
              return True
         else:
-            raise vt_exceptions.UrlError()
+             vt_exceptions.UrlNotFoundError()
 
 
 
-    def post_urls(self) -> True:
+    def post_urls(self) -> tuple[bool, int]:
         """
         creates a list of futures by submitting the method self.post_url with each url
         :return: list[tuple[str, int]]
@@ -223,9 +227,9 @@ class VTUrl(VTAutomator):
             for future in as_completed(futures):
                 results.append(future.result())
         if len(results) == len(self.url):
-            return True
+            return True, len(results)
         else:
-            raise vt_exceptions.UrlError()
+            vt_exceptions.UrlNotFoundError()
 
 
 
@@ -250,7 +254,7 @@ class VTUrl(VTAutomator):
 
 
 
-    def post_rescans(self) -> True:
+    def post_rescans(self) -> tuple[bool, int]:
         """
         creates a list of futures by submitting the method self.post_rescan with each url
         :return: list[tuple[str, int]]
@@ -262,27 +266,51 @@ class VTUrl(VTAutomator):
             for future in as_completed(futures):
                 results.append(future.result())
         if len(results) == len(self.url):
-            return True
+            return True, len(results)
+        else:
+            raise vt_exceptions.RescanError()
 
 
-    def post_comment(self, comment: str, _url = None) -> True:
+    def post_comment(self, comment = None, comment_url: tuple[str, str] = None) -> True:
         """
-        function dedicated for POST "rescan" action on url
+        function dedicated for adding a comment on a scanned url
         force virustotal for analysis
-        :param comment:
-        :param _url:
-        :return:
+        :param comment_url: if many
+        :param comment: if one
+        :return: True
         """
-        if _url is None:
+        if comment_url:
+            _url = comment_url[1]
+            _comment = comment_url[0]
+        else:
             _url = self.url[0]
+            _comment = comment
+
         if _url in self.cache_url_dict:
             _id: str = self.cache_url_dict[_url]['data']['id']
-            rep: str = self._post_req_url(_url, _id=_id, comment=comment).get('data')['type']
-            print(rep)
+            rep: str = self._post_req_url(_url, _id=_id, comment=_comment).get('data')['type']
             if rep == 'comment':
                 return True
             else:
                 raise vt_exceptions.UrlNotFoundError()
+        else:
+            raise vt_exceptions.CommentError()
+
+
+    def post_comments(self, comments: tuple[str, ...]) -> tuple[bool, int]:
+        """
+        function dedicated for adding a comments on a scanned urls
+        force virustotal for analysis
+        :param comments: tuple of str comments
+        :return: True
+        """
+        results = []
+        with ThreadPoolExecutor(self.workers) as executor:
+            comment_url_tuples = [(comment, url) for comment, url in zip(comments, self.url)]
+            post_comment_with_args = partial(self.post_comment, self)
+            results = list(executor.map(post_comment_with_args, comment_url_tuples))
+        if len(results) == len(comments):
+            return True, len(results)
         else:
             raise vt_exceptions.CommentError()
 
@@ -323,7 +351,10 @@ class VTUrl(VTAutomator):
             future = [executor.submit(self.post_get_url, _url) for _url in self.url]
             for f in as_completed(future):
                 results.append(f.result())
-        return results
+        if len(results) == len(self.url):
+            return results
+        else:
+            raise vt_exceptions.UrlNotFoundError()
 
 
 
