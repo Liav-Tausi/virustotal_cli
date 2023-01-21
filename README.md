@@ -42,6 +42,7 @@ get_url, get_urls, post_url, post_urls, post_get_url, post_get_urls
 both:
 post_rescan, post_rescans, post_comment
 ```
+
 **vt_key**:  This argument is used to specify the VirusTotal API key.
 
 **file**:  This argument is used to specify a list of file paths to scan.
