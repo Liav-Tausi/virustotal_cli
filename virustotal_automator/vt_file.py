@@ -105,7 +105,7 @@ class VTFile(VTAutomator):
 
 
 
-    def _post_req_file(self, _file, _id = None) -> dict[str, dict]:
+    def _post_req_file(self, _file, _id: str = False, rescan: bool = False, comment: str = False) -> dict[str, dict]:
         """
         sends a POST request to the VirusTotal API to upload a file for scanning.
         It also includes the password for the file (if any) in the request.
@@ -122,13 +122,13 @@ class VTFile(VTAutomator):
             fh = open(_file, "rb")
             files = {"file": (str(_file), fh, mime_type)}
 
-            payload = {"password": self.password}
-            headers = {
-                "accept": "application/json",
-                "x-apikey": self.vt_key
-            }
 
-            if (_id is None) or (len(_id) < 50):
+            if (_id is False) or (len(_id) < 50) or not (rescan and comment):
+                payload = {"password": self.password}
+                headers = {
+                    "accept": "application/json",
+                    "x-apikey": self.vt_key
+                }
                 # bigger files endpoint
                 if (os.path.getsize(_file) / 1048576) >= 24:
                     api = r'https://www.virustotal.com/api/v3/files/upload_url'
@@ -136,11 +136,38 @@ class VTFile(VTAutomator):
                     api = self.post_vt_api_file
 
             # whether if rescan
-            else:
+            if rescan and not comment:
+                files = None
                 payload = None
+                headers = {
+                    "accept": "application/json",
+                    "x-apikey": self.vt_key
+                }
                 api = self.post_vt_api_file_rescan + _id + '/analyse'
+
+            # whether if comment
+            if comment and not rescan:
+                files = None
+                headers = {
+                    "accept": "application/json",
+                    "x-apikey": self.vt_key,
+                    "content-type": "application/json"
+                }
+                payload = {"data": {
+                    "type": "comment",
+                    "attributes": {"text": comment}
+                }}
+                api = self.post_vt_api_file_add_comment + _id + '/comments'
+
             # API request
-            req = requests.post(api, data=payload, files=files, headers=headers)
+            if comment:
+                # for adding a comment
+                req = requests.post(api, json=payload, headers=headers)
+                if req.status_code == 409:
+                    raise vt_exceptions.IdenticalCommentExistError()
+            else:
+                # all other requests
+                req = requests.post(api, data=payload, files=files, headers=headers)
 
             fh.close()
 
@@ -226,6 +253,7 @@ class VTFile(VTAutomator):
         if len(results) == len(self.file):
             return True
 
+
     def post_rescan(self, _file = None) -> True:
         """
         function dedicated for POST "rescan" action on file
@@ -245,6 +273,7 @@ class VTFile(VTAutomator):
         else:
             raise vt_exceptions.RescanError()
 
+
     def post_rescans(self) -> True:
         """
         creates a list of futures by submitting the method self.post_rescan with each file
@@ -260,6 +289,27 @@ class VTFile(VTAutomator):
             return True
         else:
             raise FileNotFoundError()
+
+
+    def post_comment(self, comment: str, _file = None) -> True:
+        """
+        function dedicated for POST "rescan" action on file
+        force virustotal for analysis
+        :param comment:
+        :param _file:
+        :return:
+        """
+        if _file is None:
+            _file = self.file[0]
+        if _file in self.cache_file_dict:
+            _id: str = self.cache_file_dict[_file]['data']['id']
+            rep: str = self._post_req_file(_file, _id=_id, comment=comment).get('data')['type']
+            if rep == 'comment':
+                return True
+            else:
+                raise vt_exceptions.VtFileNotFoundError()
+        else:
+            raise vt_exceptions.CommentError()
 
 
     def post_get_file(self, _file: str = None) -> tuple[str, int]:
