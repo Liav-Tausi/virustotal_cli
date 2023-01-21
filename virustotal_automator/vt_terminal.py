@@ -34,9 +34,10 @@ class Scan:
     def type_of(self):
         return self.__type_of
 
-    def scan(self, file_paths=None, urls=None, method=None, password=None, comment = None):
+    def scan(self, file_paths=None, urls=None, method=None, password=None, comment = None, comments = None):
         """
         Scans files or urls using the VirusTotal API
+        :param comments: optional comments for File/url
         :param comment: optional comment for File/url
         :param password: optional file password
         :param file_paths: list of file paths to scan
@@ -44,14 +45,14 @@ class Scan:
         :param method: method to run (get, post, post_get)
         """
         if self.type_of == 'file':
-            return self._scan_files(file_paths, method, password, comment)
+            return self._scan_files(file_paths, method, password, comment, comments)
         elif self.type_of == 'url':
-            return self._scan_urls(urls, method, comment)
+            return self._scan_urls(urls, method, comment, comments)
         else:
             raise ValueError(f"Invalid scan type: {self.type_of}")
 
 
-    def _scan_files(self, file_paths, method, password, comment):
+    def _scan_files(self, file_paths: tuple[str, ...], method: str, password: str, comment: str, comments: tuple[str, ...]):
         """
         Scans files using the VirusTotal API
         :param file_paths: list of file paths to scan
@@ -72,6 +73,8 @@ class Scan:
             return vt_file.post_rescans()
         elif method == 'post_comment':
             return vt_file.post_comment(comment=comment)
+        elif method == 'post_comments':
+            return vt_file.post_comments(comments=comments)
         elif method == 'post_get_file':
             return vt_file.post_get_file()
         elif method == 'post_get_files':
@@ -79,7 +82,7 @@ class Scan:
         else:
             raise ValueError()
 
-    def _scan_urls(self, urls, method, comment):
+    def _scan_urls(self, urls: tuple[str, ...], method: str, comment: str, comments: tuple[str, ...]):
         """
         Scans urls using the VirusTotal API
         :param urls: list of urls to scan
@@ -100,6 +103,8 @@ class Scan:
             return vt_url.post_rescans()
         elif method == 'post_comment':
             return vt_url.post_comment(comment=comment)
+        elif method == 'post_comments':
+            return vt_url.post_comments(comments=comments)
         elif method == 'post_get_url':
             return vt_url.post_get_url()
         elif method == 'post_get_urls':
@@ -127,9 +132,10 @@ def main() -> tuple[str, int] | str | list[tuple]:
     group.add_argument('--url', nargs='+', help='a list of URLs')
     parser.add_argument('--password', help='optional file password', nargs='?', required=False)
     parser.add_argument('--comment', help='a comment for URL/file', nargs='?', required=False)
+    parser.add_argument('--comments', help='a comment for URL/file', nargs='+', required=False)
 
 
     args = parser.parse_args()
     scanning: Scan = Scan(args.type, args.vt_key, args.workers)
     return scanning.scan(file_paths=args.file, urls=args.url, method=args.method,
-                         password=args.password, comment=args.comment)
+                         password=args.password, comment=args.comment, comments=args.comments)
