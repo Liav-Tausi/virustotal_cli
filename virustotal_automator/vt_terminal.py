@@ -34,23 +34,24 @@ class Scan:
     def type_of(self):
         return self.__type_of
 
-    def scan(self, file_paths=None, urls=None, method=None, password=None):
+    def scan(self, file_paths=None, urls=None, method=None, password=None, comment = None):
         """
         Scans files or urls using the VirusTotal API
+        :param comment: optional comment for File/url
         :param password: optional file password
         :param file_paths: list of file paths to scan
         :param urls: list of urls to scan
         :param method: method to run (get, post, post_get)
         """
         if self.type_of == 'file':
-            return self._scan_files(file_paths, method, password)
+            return self._scan_files(file_paths, method, password, comment)
         elif self.type_of == 'url':
-            return self._scan_urls(urls, method)
+            return self._scan_urls(urls, method, comment)
         else:
             raise ValueError(f"Invalid scan type: {self.type_of}")
 
 
-    def _scan_files(self, file_paths, method, password):
+    def _scan_files(self, file_paths, method, password, comment):
         """
         Scans files using the VirusTotal API
         :param file_paths: list of file paths to scan
@@ -69,6 +70,8 @@ class Scan:
             return vt_file.post_rescan()
         elif method == 'post_rescans':
             return vt_file.post_rescans()
+        elif method == 'post_comment':
+            return vt_file.post_comment(comment=comment)
         elif method == 'post_get_file':
             return vt_file.post_get_file()
         elif method == 'post_get_files':
@@ -76,7 +79,7 @@ class Scan:
         else:
             raise ValueError()
 
-    def _scan_urls(self, urls, method):
+    def _scan_urls(self, urls, method, comment):
         """
         Scans urls using the VirusTotal API
         :param urls: list of urls to scan
@@ -95,6 +98,8 @@ class Scan:
             return vt_url.post_rescan()
         elif method == 'post_rescans':
             return vt_url.post_rescans()
+        elif method == 'post_comment':
+            return vt_url.post_comment(comment=comment)
         elif method == 'post_get_url':
             return vt_url.post_get_url()
         elif method == 'post_get_urls':
@@ -116,12 +121,15 @@ def main() -> tuple[str, int] | str | list[tuple]:
     parser.add_argument('type', help='type of scan (file or url)')
     parser.add_argument('--workers', type=int, default=7, help='number of workers')
     parser.add_argument('method', help='method to run')
-    parser.add_argument('vt_key', nargs='?', help='VirusTotal API key')
+    parser.add_argument('vt_key', help='VirusTotal API key')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--file', nargs='+', help='a list of files')
-    group.add_argument('--password', help='optional file password')
     group.add_argument('--url', nargs='+', help='a list of URLs')
+    parser.add_argument('--password', help='optional file password', nargs='?', required=False)
+    parser.add_argument('--comment', help='a comment for URL/file', nargs='?', required=False)
+
 
     args = parser.parse_args()
     scanning: Scan = Scan(args.type, args.vt_key, args.workers)
-    return scanning.scan(file_paths=args.file, urls=args.url, method=args.method, password=args.password)
+    return scanning.scan(file_paths=args.file, urls=args.url, method=args.method,
+                         password=args.password, comment=args.comment)
