@@ -9,6 +9,7 @@ import mimetypes
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import partial
 
 import requests
 import vt_exceptions
@@ -195,7 +196,7 @@ class VTFile(VTAutomator):
         if rep is not None:
             return rep
         else:
-            raise FileNotFoundError()
+            vt_exceptions.VtFileNotFoundError()
 
 
 
@@ -220,8 +221,10 @@ class VTFile(VTAutomator):
             for future in as_completed(futures):
                 file = self.file[futures.index(future)]
                 results.append((file, future.result()))
-        return results
-
+        if len(results) == len(self.file):
+            return results
+        else:
+            vt_exceptions.VtFileNotFoundError()
 
 
     def post_file(self, _file = None) -> True:
@@ -235,11 +238,12 @@ class VTFile(VTAutomator):
         if rep == 'analysis':
             return True
         else:
-            raise FileNotFoundError()
+            vt_exceptions.VtFileNotFoundError()
 
 
 
-    def post_files(self) -> True:
+
+    def post_files(self) -> tuple[bool, int]:
         """
         creates a list of futures by submitting the method self.post_file with each file
         :return: list[tuple[str, int]]
@@ -251,7 +255,9 @@ class VTFile(VTAutomator):
             for future in as_completed(futures):
                 results.append(future.result())
         if len(results) == len(self.file):
-            return True
+            return True, len(results)
+        else:
+            vt_exceptions.VtFileNotFoundError()
 
 
     def post_rescan(self, _file = None) -> True:
@@ -274,7 +280,7 @@ class VTFile(VTAutomator):
             raise vt_exceptions.RescanError()
 
 
-    def post_rescans(self) -> True:
+    def post_rescans(self) -> tuple[bool, int]:
         """
         creates a list of futures by submitting the method self.post_rescan with each file
         :return: list[tuple[str, int]]
@@ -286,30 +292,55 @@ class VTFile(VTAutomator):
             for future in as_completed(futures):
                 results.append(future.result())
         if len(results) == len(self.file):
-            return True
+            return True, len(results)
         else:
-            raise FileNotFoundError()
+            raise vt_exceptions.RescanError()
 
 
-    def post_comment(self, comment: str, _file = None) -> True:
+    def post_comment(self, comment: str = None, comment_file: tuple[str, str] = None) -> True:
         """
-        function dedicated for POST "rescan" action on file
+        function dedicated for adding a comment on a scanned file
         force virustotal for analysis
-        :param comment:
-        :param _file:
-        :return:
+        :param comment_file: if many
+        :param comment: if one
+        :return: True
         """
-        if _file is None:
+        if comment_file:
+            _file = comment_file[1]
+            _comment = comment_file[0]
+        else:
             _file = self.file[0]
+            _comment = comment
+
         if _file in self.cache_file_dict:
             _id: str = self.cache_file_dict[_file]['data']['id']
-            rep: str = self._post_req_file(_file, _id=_id, comment=comment).get('data')['type']
+            rep: str = self._post_req_file(_file, _id=_id, comment=_comment).get('data')['type']
             if rep == 'comment':
                 return True
             else:
                 raise vt_exceptions.VtFileNotFoundError()
         else:
             raise vt_exceptions.CommentError()
+
+
+    def post_comments(self, comments: tuple[str, ...]) -> tuple[bool, int]:
+        """
+        function dedicated for adding a comments on a scanned files
+        force virustotal for analysis
+        :param comments: tuple of str comments
+        :return: True
+        """
+        results = []
+        with ThreadPoolExecutor(self.workers) as executor:
+            comment_file_tuples = [(comment, url) for comment, url in zip(comments, self.file)]
+            post_comment_with_args = partial(self.post_comment, self)
+            results = list(executor.map(post_comment_with_args, comment_file_tuples))
+        if len(results) == len(comments):
+            return True, len(results)
+        else:
+            raise vt_exceptions.CommentError()
+
+
 
 
     def post_get_file(self, _file: str = None) -> tuple[str, int]:
@@ -346,7 +377,10 @@ class VTFile(VTAutomator):
             future = [executor.submit(self.post_get_file, _file) for _file in self.file]
             for f in as_completed(future):
                 results.append(f.result())
-        return results
+        if len(results) == len(self.file):
+            return results
+        else:
+            raise vt_exceptions.VtFileNotFoundError()
 
 
 
