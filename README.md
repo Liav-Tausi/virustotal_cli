@@ -33,7 +33,14 @@ used for scanning URLs. It also inherits from the VTAutomator class and includes
 **method**:  This argument is used to specify the method of scan, such as 
 
  ```python 
-get_file, get_files, post_file, post_files, post_get_file, post_get_files, get_url, get_urls, post_url, post_urls, post_get_url, post_get_urls
+files: 
+get_file, get_files, post_file, post_files, post_get_file, post_get_files
+
+urls:
+get_url, get_urls, post_url, post_urls, post_get_url, post_get_urls
+
+both:
+post_rescan, post_rescans
 ```
 **vt_key**:  This argument is used to specify the VirusTotal API key.
 
