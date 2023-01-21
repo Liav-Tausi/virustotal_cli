@@ -25,6 +25,10 @@ class FileDescError(VTAutomatorError):
     def __init__(self):
         super().__init__("Invalid File Description.")
 
+class UnDefinedAction(VTAutomatorError):
+    def __init__(self):
+        super().__init__("Un defined action.")
+
 
 class UrlError(VTAutomatorError):
     def __init__(self):
@@ -63,6 +67,24 @@ class RescanError(VTAutomatorError):
     def __init__(self):
         super().__init__("Not in cache, send a post request.")
 
+
+class CommentError(VTAutomatorError):
+    def __init__(self):
+        super().__init__("Not in cache, send a post request.")
+
+class IdenticalCommentExistError(VTAutomatorError):
+    def __init__(self):
+        super().__init__("comment already exist.")
+
+
+class UrlNotFoundError(VTAutomatorError):
+    def __init__(self):
+        super().__init__("Url not found, send a post request.")
+
+
+class VtFileNotFoundError(VTAutomatorError):
+    def __init__(self):
+        super().__init__("File not found, send a post request.")
 
 class CacheExpiredError(VTAutomatorError):
     def __init__(self, url: str, last_analysis_utc: 'datetime', expire_date: 'datetime'):
