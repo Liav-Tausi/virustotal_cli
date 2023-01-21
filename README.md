@@ -23,7 +23,7 @@ used for scanning URLs. It also inherits from the VTAutomator class and includes
 
 ### *CLI*
 ```bash
-[-h] [--workers WORKERS] (--file FILE [FILE ...] | --password PASSWORD | --url URL [URL ...]) type method [vt_key]
+vt_main.py [-h] [--workers WORKERS] (--file FILE [FILE ...] | --url URL [URL ...]) [--password [PASSWORD]] [--comment [COMMENT]] type method vt_key
 ```
 
 **type**:  This argument is used to specify the type of scan, either 'file' or 'url'.
@@ -50,9 +50,11 @@ post_rescan, post_rescans, post_comment
 
 **url**:  This argument is used to specify a list of URLs to scan.
 
+**comment**: This is an optinal argumant that allows to add a comment on scaned URLs/Files
 
 ```bash
-The program will take in url/s or file/s as input and return the scan results from the VirusTotal database
+The program will take in url/s or file/s as input and return the scan results from the VirusTotal database created
+by: liav tausi
 
 positional arguments:
   type                  type of scan (file or url)
@@ -64,8 +66,10 @@ options:
   --workers WORKERS     number of workers
   --file FILE [FILE ...]
                         a list of files
-  --password PASSWORD   optional file password
   --url URL [URL ...]   a list of URLs
+  --password [PASSWORD]
+                        optional file password
+  --comment [COMMENT]   a comment for URL/file
   ```
 
 
