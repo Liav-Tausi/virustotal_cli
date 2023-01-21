@@ -89,7 +89,7 @@ class VTUrl(VTAutomator):
 
 
 
-    def _post_req_url(self, _url, _id = None) -> dict[str, dict]:
+    def _post_req_url(self, _url: str, _id: str = None, rescan: bool = None, comment: str = None) -> dict[str, dict]:
         """
         sends a POST request to a specific URL and returns the response in the form of a dictionary.
         raises exceptions if the request fails or returns empty content.
@@ -99,21 +99,49 @@ class VTUrl(VTAutomator):
         """
         if self._restrictions():
             self.set_limit_counters()
-            payload: str | None = f"url={_url}"
-            headers: dict = {
-                "accept": "application/json",
-                "x-apikey": self.vt_key,
-                "content-type": "application/x-www-form-urlencoded"
-            }
 
-            if (_id is None) or (len(_id) < 50):
+            # regular post request
+            if (_id is None or len(_id) < 50) or (not rescan and not comment):
+                payload: str | dict | None = f"url={_url}"
+                headers: dict = {
+                    "accept": "application/json",
+                    "x-apikey": self.vt_key,
+                    "content-type": "application/x-www-form-urlencoded"
+                }
                 api = self.post_vt_api_url
+
             # whether if rescan
-            else:
+            if rescan and not comment:
                 payload = None
+                headers: dict = {
+                    "accept": "application/json",
+                    "x-apikey": self.vt_key,
+                    "content-type": "application/x-www-form-urlencoded"
+                }
                 api = self.post_vt_api_url_rescan + _id + '/analyse'
+
+            # whether if comment
+            if comment and not rescan:
+                headers: dict = {
+                    "accept": "application/json",
+                    "x-apikey": self.vt_key,
+                    "content-type": "application/json"
+                }
+                payload = {"data": {
+                    "type": "comment",
+                    "attributes": {"text": comment}
+                }}
+                api = self.post_vt_api_url_add_comment + _id + '/comments'
+
             # API request
-            req = requests.post(api, data=payload, headers=headers)
+            if comment:
+                # for adding a comment
+                req = requests.post(api, json=payload, headers=headers)
+                if req.status_code == 409:
+                    raise vt_exceptions.IdenticalCommentExistError()
+            else:
+                # all other requests
+                req = requests.post(api, data=payload, headers=headers)
             if req.status_code >= 400:
                 raise vt_exceptions.RequestFailed()
             if bool(req.json()):
@@ -179,7 +207,7 @@ class VTUrl(VTAutomator):
         if rep == 'analysis':
              return True
         else:
-            raise FileNotFoundError()
+            raise vt_exceptions.UrlError()
 
 
 
@@ -197,7 +225,8 @@ class VTUrl(VTAutomator):
         if len(results) == len(self.url):
             return True
         else:
-            raise FileNotFoundError()
+            raise vt_exceptions.UrlError()
+
 
 
     def post_rescan(self, _url = None) -> True:
@@ -215,7 +244,7 @@ class VTUrl(VTAutomator):
             if rep == 'analysis':
                 return True
             else:
-                raise FileNotFoundError()
+                raise vt_exceptions.UrlNotFoundError()
         else:
             raise vt_exceptions.RescanError()
 
@@ -234,6 +263,29 @@ class VTUrl(VTAutomator):
                 results.append(future.result())
         if len(results) == len(self.url):
             return True
+
+
+    def post_comment(self, comment: str, _url = None) -> True:
+        """
+        function dedicated for POST "rescan" action on url
+        force virustotal for analysis
+        :param comment:
+        :param _url:
+        :return:
+        """
+        if _url is None:
+            _url = self.url[0]
+        if _url in self.cache_url_dict:
+            _id: str = self.cache_url_dict[_url]['data']['id']
+            rep: str = self._post_req_url(_url, _id=_id, comment=comment).get('data')['type']
+            print(rep)
+            if rep == 'comment':
+                return True
+            else:
+                raise vt_exceptions.UrlNotFoundError()
+        else:
+            raise vt_exceptions.CommentError()
+
 
 
     def post_get_url(self, _url: str = None) -> tuple[str, int]:
