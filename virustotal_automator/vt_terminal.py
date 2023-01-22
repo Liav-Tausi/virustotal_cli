@@ -35,9 +35,11 @@ class Scan:
         return self.__type_of
 
     def scan(self, file_paths=None, urls=None, method=None, password=None,
-             comment = None, comments = None, limit = None, cursor = None):
+             comment = None, comments = None, limit = None, cursor = None,
+             verdict = None):
         """
         Scans files or urls using the VirusTotal API
+        :param verdict: vote type "harmless" or "malicious"
         :param cursor: cursor for retried comments
         :param limit: limit for retried comments
         :param comments: optional comments for File/url
@@ -48,15 +50,15 @@ class Scan:
         :param method: method to run (get, post, post_get)
         """
         if self.type_of == 'file':
-            return self._scan_files(file_paths, method, password, comment, comments, limit, cursor)
+            return self._scan_files(file_paths, method, password, comment, comments, limit, cursor, verdict)
         elif self.type_of == 'url':
-            return self._scan_urls(urls, method, comment, comments, limit, cursor)
+            return self._scan_urls(urls, method, comment, comments, limit, cursor, verdict)
         else:
             raise ValueError(f"Invalid scan type: {self.type_of}")
 
 
     def _scan_files(self, file_paths: tuple[str, ...], method: str, password: str, comment: str,
-                    comments: tuple[str, ...], limit: int, cursor: str = None):
+                    comments: tuple[str, ...], limit: int, cursor: str = None, verdict: str = None):
         """
         Scans files using the VirusTotal API
         :param file_paths: list of file paths to scan
@@ -79,6 +81,8 @@ class Scan:
             return vt_file.post_file_comment(comment=comment)
         elif method == 'post_files_comments':
             return vt_file.post_files_comments(comments=comments)
+        elif method == 'post_vote':
+            return vt_file.post_vote(verdict=verdict)
         elif method == 'get_file_comments':
             return vt_file.get_file_comments(limit=limit, cursor=cursor)
         elif method == 'get_files_comments':
@@ -91,7 +95,8 @@ class Scan:
             raise ValueError()
 
     def _scan_urls(self, urls: tuple[str, ...], method: str, comment: str,
-                   comments: tuple[str, ...], limit: int, cursor: str = None):
+                   comments: tuple[str, ...], limit: int, cursor: str = None,
+                   verdict: str = None):
         """
         Scans urls using the VirusTotal API
         :param urls: list of urls to scan
@@ -114,6 +119,8 @@ class Scan:
             return vt_url.post_url_comment(comment=comment)
         elif method == 'post_urls_comments':
             return vt_url.post_urls_comments(comments=comments)
+        elif method == 'post_vote':
+            return vt_url.post_vote(verdict=verdict)
         elif method == 'get_url_comments':
             return vt_url.get_url_comments(limit=limit, cursor=cursor)
         elif method == 'get_urls_comments':
@@ -148,9 +155,11 @@ def main() -> tuple[str, int] | str | list[tuple]:
     parser.add_argument('--comments', help='a comment for URL/file', nargs='+', required=False)
     parser.add_argument('--limit', help='limit for retried comments', nargs='?', required=False)
     parser.add_argument('--cursor', help='cursor for retried comments', nargs='?', required=False)
+    parser.add_argument('--verdict', help='vote for "harmless" or "malicious"', nargs='?', required=False)
 
 
     args = parser.parse_args()
     scanning: Scan = Scan(args.type, args.vt_key, args.workers)
     return scanning.scan(file_paths=args.file, urls=args.url, method=args.method, password=args.password,
-                         comment=args.comment, comments=args.comments, limit=args.limit, cursor=args.cursor)
+                         comment=args.comment, comments=args.comments, limit=args.limit, cursor=args.cursor,
+                         verdict=args.verdict)
