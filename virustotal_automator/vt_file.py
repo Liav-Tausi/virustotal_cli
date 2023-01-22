@@ -114,7 +114,8 @@ class VTFile(VTAutomator):
 
 
 
-    def _post_req_file(self, _file, _id: str = False, rescan: bool = False, comment: str = False) -> dict[str, dict]:
+    def _post_req_file(self, _file, _id: str = False, rescan: bool = False, comment: str = False,
+                       verdict: str = None) -> dict[str, dict]:
         """
         sends a POST request to the VirusTotal API to upload a file for scanning.
         It also includes the password for the file (if any) in the request.
@@ -132,7 +133,7 @@ class VTFile(VTAutomator):
             files = {"file": (str(_file), fh, mime_type)}
 
 
-            if (_id is False) or (len(_id) < 50) or not (rescan and comment):
+            if (_id is False) or (len(_id) < 50) or not (rescan or comment or verdict):
                 payload = {"password": self.password}
                 headers = {
                     "accept": "application/json",
@@ -168,10 +169,25 @@ class VTFile(VTAutomator):
                 }}
                 api = self.post_vt_api_file_add_comment + _id + '/comments'
 
+
+            if verdict:
+                headers: dict = {
+                    "accept": "application/json",
+                    "x-apikey": self.vt_key,
+                    "content-type": "application/json"
+                }
+                payload = {"data": {
+                    "type": "vote",
+                    "attributes": {"verdict": verdict}
+                }}
+                api = self.post_vt_file_add_vote + _id + '/votes'
+
             # API request
-            if comment:
+            if comment or verdict:
                 # for adding a comment
                 req = requests.post(api, json=payload, headers=headers)
+                if req.status_code == 400:
+                    raise vt_exceptions.VoteError()
                 if req.status_code == 409:
                     raise vt_exceptions.IdenticalCommentExistError()
             else:
@@ -277,7 +293,7 @@ class VTFile(VTAutomator):
             except IndexError:
                 raise vt_exceptions.NoCommentsError()
         else:
-            raise vt_exceptions.CommentError()
+            raise vt_exceptions.NotInCacheError()
 
 
     def get_files_comments(self, limit: int, cursor: str = None) -> list[list, ...]:
@@ -338,9 +354,9 @@ class VTFile(VTAutomator):
         :return: True
         """
         if _file is None:
-            _url = self.file[0]
-        if _file in self.cache_url_dict:
-            _id: str = self.cache_url_dict[_file]['data']['id']
+            _file = self.file[0]
+        if _file in self.cache_file_dict:
+            _id: str = self.cache_file_dict[_file]['data']['id']
             rep: str = self._post_req_file(_file, _id = _id).get('data')['type']
             if rep == 'analysis':
                 return True
@@ -390,7 +406,7 @@ class VTFile(VTAutomator):
             else:
                 raise vt_exceptions.VtFileNotFoundError()
         else:
-            raise vt_exceptions.CommentError()
+            raise vt_exceptions.NotInCacheError()
 
 
     def post_files_comments(self, comments: tuple[str, ...]) -> tuple[bool, int]:
@@ -401,14 +417,30 @@ class VTFile(VTAutomator):
         :return: True
         """
         with ThreadPoolExecutor(self.workers) as executor:
-            comment_file_tuples = [(comment, url) for comment, url in zip(comments, self.file)]
+            comment_file_tuples = [(comment, file) for comment, file in zip(comments, self.file)]
             post_comment_with_args = partial(self.post_file_comment, self)
             results = list(executor.map(post_comment_with_args, comment_file_tuples))
         if len(results) == len(comments):
             return True, len(results)
         else:
-            raise vt_exceptions.CommentError()
+            raise vt_exceptions.NotInCacheError()
 
+
+    def post_vote(self, verdict: str, _file = None) -> True:
+        if verdict not in ['malicious', 'harmless']:
+            raise vt_exceptions.VerdictError()
+
+        if _file is None:
+            _file = self.file[0]
+        if _file in self.cache_file_dict:
+            _id: str = self.cache_file_dict[_file]['data']['id']
+            rep: str = self._post_req_file(_file, _id=_id, verdict=verdict).get('data')['type']
+            if rep == 'vote':
+                return True
+            else:
+                raise vt_exceptions.VtFileNotFoundError()
+        else:
+            raise vt_exceptions.NotInCacheError()
 
 
 
@@ -422,7 +454,7 @@ class VTFile(VTAutomator):
 
         """
         if _file is None:
-            _url = self.file
+            _file = self.file
         for _ in self.file:
             self.post_file()
             for _ in range(1):
