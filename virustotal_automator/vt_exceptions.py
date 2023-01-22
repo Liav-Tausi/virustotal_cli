@@ -72,6 +72,10 @@ class CommentError(VTAutomatorError):
     def __init__(self):
         super().__init__("Not in cache, send a post request.")
 
+class NoCommentsError(VTAutomatorError):
+    def __init__(self):
+        super().__init__("No comments.")
+
 class IdenticalCommentExistError(VTAutomatorError):
     def __init__(self):
         super().__init__("comment already exist.")
@@ -85,6 +89,7 @@ class UrlNotFoundError(VTAutomatorError):
 class VtFileNotFoundError(VTAutomatorError):
     def __init__(self):
         super().__init__("File not found, send a post request.")
+
 
 class CacheExpiredError(VTAutomatorError):
     def __init__(self, url: str, last_analysis_utc: 'datetime', expire_date: 'datetime'):
