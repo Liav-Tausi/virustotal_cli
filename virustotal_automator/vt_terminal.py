@@ -150,7 +150,6 @@ def main() -> tuple[str, int] | str | list[tuple]:
     parser.add_argument('--cursor', help='cursor for retried comments', nargs='?', required=False)
 
 
-
     args = parser.parse_args()
     scanning: Scan = Scan(args.type, args.vt_key, args.workers)
     return scanning.scan(file_paths=args.file, urls=args.url, method=args.method, password=args.password,
