@@ -67,8 +67,7 @@ class VTFile(VTAutomator):
         return self.__workers
 
 
-
-    def _get_req_file(self, _file) -> dict[str, dict]:
+    def _get_req_file(self, _file, _id: str = None, limit: int = None, cursor: str = None) -> dict[str, dict]:
         """
         sends a GET request to the VirusTotal API to retrieve information about a file.
         It uses the file's SHA256 hash as the identifier.
@@ -84,19 +83,28 @@ class VTFile(VTAutomator):
                 "accept": "application/json",
                 "x-apikey": self.vt_key
             }
-            with open(_file, 'rb') as file:
-                file_hash = file.read()
+            if (_id is None or len(_id) < 50) or not limit:
+                with open(_file, 'rb') as file:
+                    file_hash = file.read()
+                # SHA256 hash as the identifier
+                hashed = hashlib.sha256(file_hash)
+                hex_hash = hashed.hexdigest()
 
-            # SHA256 hash as the identifier
-            hashed = hashlib.sha256(file_hash)
-            hex_hash = hashed.hexdigest()
+                api = self.get_vt_api_file + hex_hash
+
+            if limit and _id:
+                if cursor:
+                    ret = '/comments' + f'?limit={limit}' + f'&cursor={cursor}'
+                else:
+                    ret = '/comments' + f'?limit={limit}'
+                api = self.get_vt_api_file_ret_comment + _id + ret
 
             # API request
-            req = requests.get(self.get_vt_api_file + hex_hash, headers=headers)
+            req = requests.get(url=api, headers=headers)
 
             if req.status_code >= 400:
                 raise vt_exceptions.RequestFailed()
-            if bool(req.json()):
+            if req.json():
                 # return dict[str, dict]
                 return req.json()
             else:
@@ -174,7 +182,7 @@ class VTFile(VTAutomator):
 
             if req.status_code >= 400:
                 raise vt_exceptions.RequestFailed()
-            if bool(req.json()):
+            if req.json():
                 # return dict[str,dict]
                 return req.json()
             else:
@@ -227,6 +235,69 @@ class VTFile(VTAutomator):
             vt_exceptions.VtFileNotFoundError()
 
 
+
+    def get_file_comments(self, limit: int = None, cursor: str = None, comment_file_limit: tuple[str, int, str | None] = None,
+                    return_cursor: bool = None) -> list[str]:
+        """
+        function dedicated for adding a comment on a scanned file
+        force virustotal for analysis
+        :param return_cursor: if dev wants cursor
+        :param cursor: continuation cursor
+        :param limit: limit of comments to retrieve
+        :param comment_file_limit: if many
+        :return: list[str]
+        """
+        if comment_file_limit:
+            _cursor = comment_file_limit[2]
+            _limit = comment_file_limit[1]
+            _file = comment_file_limit[0]
+        else:
+            _file = self.file[0]
+            _limit = limit
+            _cursor = cursor
+
+        if _file in self.cache_file_dict:
+            _id: str = self.cache_file_dict[_file]['data']['id']
+            rep: dict = self._get_req_file(_file, _id=_id, limit=_limit, cursor=_cursor)
+            try:
+                if rep.get('data')[0]['type'] == 'comment':
+                    comments: list = list()
+                    for index in range(int(_limit)):
+                        try:
+                            for data in rep.get('data')[index]['attributes']:
+                                if data == 'text':
+                                    comments.append(rep.get('data')[index]['attributes']['text'])
+                        except IndexError:
+                            return comments
+                    return comments
+                elif (len(rep) < 10) and return_cursor is None:
+                    return rep.get('meta')['cursor']
+                else:
+                    raise vt_exceptions.VtFileNotFoundError()
+            except IndexError:
+                raise vt_exceptions.NoCommentsError()
+        else:
+            raise vt_exceptions.CommentError()
+
+
+    def get_files_comments(self, limit: int, cursor: str = None) -> list[list, ...]:
+        """
+        function dedicated for adding a comments on a scanned files
+        force virustotal for analysis
+        :param cursor: continuation cursor
+        :param limit: limit of comments to retrieve
+        :return: list[list, ...]
+        """
+        results = []
+        with ThreadPoolExecutor(self.workers) as executor:
+            file_limit_cursor_tuples = [(file, limit, cursor) for file in self.file]
+            for data in file_limit_cursor_tuples:
+                post_with_args = partial(self.get_file_comments, comment_file_limit=data)
+                results.append(list(executor.map(post_with_args, file_limit_cursor_tuples))[0])
+        return results
+
+
+
     def post_file(self, _file = None) -> True:
         """
         function dedicated for POST action on file
@@ -239,7 +310,6 @@ class VTFile(VTAutomator):
             return True
         else:
             vt_exceptions.VtFileNotFoundError()
-
 
 
 
@@ -297,7 +367,7 @@ class VTFile(VTAutomator):
             raise vt_exceptions.RescanError()
 
 
-    def post_comment(self, comment: str = None, comment_file: tuple[str, str] = None) -> True:
+    def post_file_comment(self, comment: str = None, comment_file: tuple[str, str] = None) -> True:
         """
         function dedicated for adding a comment on a scanned file
         force virustotal for analysis
@@ -323,17 +393,16 @@ class VTFile(VTAutomator):
             raise vt_exceptions.CommentError()
 
 
-    def post_comments(self, comments: tuple[str, ...]) -> tuple[bool, int]:
+    def post_files_comments(self, comments: tuple[str, ...]) -> tuple[bool, int]:
         """
         function dedicated for adding a comments on a scanned files
         force virustotal for analysis
         :param comments: tuple of str comments
         :return: True
         """
-        results = []
         with ThreadPoolExecutor(self.workers) as executor:
             comment_file_tuples = [(comment, url) for comment, url in zip(comments, self.file)]
-            post_comment_with_args = partial(self.post_comment, self)
+            post_comment_with_args = partial(self.post_file_comment, self)
             results = list(executor.map(post_comment_with_args, comment_file_tuples))
         if len(results) == len(comments):
             return True, len(results)
