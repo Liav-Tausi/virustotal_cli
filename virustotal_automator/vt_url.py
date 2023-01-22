@@ -411,6 +411,7 @@ class VTUrl(VTAutomator):
         :param verdict:
         :param _url:
         :return: True
+
         """
         if verdict not in ['malicious', 'harmless']:
             raise vt_exceptions.VerdictError()
