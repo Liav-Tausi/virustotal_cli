@@ -24,7 +24,7 @@ used for scanning URLs. It also inherits from the VTAutomator class and includes
 ### *CLI*
 ```bash
 [-h] [--workers WORKERS] (--file FILE [FILE ...] | --url URL [URL ...]) [--password [PASSWORD]] [--comment [COMMENT]] [--comments COMMENTS [COMMENTS ...]]
-                  [--limit [LIMIT]] [--cursor [CURSOR]]
+                  [--limit [LIMIT]] [--cursor [CURSOR]] [--verdict [VERDICT]]
                   type method vt_key
 ```
 
@@ -42,7 +42,7 @@ urls:
 get_url, get_urls, get_url_commensts, get_urls_comments, post_url, post_urls, post_get_url, post_get_urls
 
 both:
-post_rescan, post_rescans, post_comment, post_comments, 
+post_rescan, post_rescans, post_comment, post_comments, post_vote
 ```
 
 **vt_key**:  This argument is used to specify the VirusTotal API key.
@@ -60,6 +60,8 @@ post_rescan, post_rescans, post_comment, post_comments,
 **--limit**: an argumant that specitys the limited amount of comments to retrive 
 
 **--cursor**: marker that is used to keep track of a specific position within a dataset or resultset
+
+**--verdict**: an optinal argumant for vote methed, "harmless" or "malicious"
 
 ```bash
 The program will take in url/s or file/s as input and return the scan results from the VirusTotal database created 
@@ -83,6 +85,8 @@ options:
                         a comment for URL/file
   --limit [LIMIT]       limit for retried comments
   --cursor [CURSOR]     cursor for retried comments
+  --verdict [VERDICT]   vote for "harmless" or "malicious"
+
   ```
 
 
