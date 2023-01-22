@@ -28,6 +28,7 @@ used for scanning URLs. It also inherits from the VTAutomator class and includes
                   type method vt_key
 ```
 
+
 **type**:  This argument is used to specify the type of scan, either 'file' or 'url'.
 
 **--workers**:  This argument is used to specify the number of worker threads to use in the scan.
@@ -62,6 +63,7 @@ post_rescan, post_rescans, post_comment, post_comments, post_vote
 **--cursor**: marker that is used to keep track of a specific position within a dataset or resultset
 
 **--verdict**: an optinal argumant for vote methed, "harmless" or "malicious"
+
 
 ```bash
 The program will take in url/s or file/s as input and return the scan results from the VirusTotal database created 
