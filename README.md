@@ -23,38 +23,46 @@ used for scanning URLs. It also inherits from the VTAutomator class and includes
 
 ### *CLI*
 ```bash
-vt_main.py [-h] [--workers WORKERS] (--file FILE [FILE ...] | --url URL [URL ...]) [--password [PASSWORD]] [--comment [COMMENT]] type method vt_key
+[-h] [--workers WORKERS] (--file FILE [FILE ...] | --url URL [URL ...]) [--password [PASSWORD]] [--comment [COMMENT]] [--comments COMMENTS [COMMENTS ...]]
+                  [--limit [LIMIT]] [--cursor [CURSOR]]
+                  type method vt_key
 ```
 
 **type**:  This argument is used to specify the type of scan, either 'file' or 'url'.
 
-**workers**:  This argument is used to specify the number of worker threads to use in the scan.
+**--workers**:  This argument is used to specify the number of worker threads to use in the scan.
 
 **method**:  This argument is used to specify the method of scan, such as 
 
  ```python 
 files: 
-get_file, get_files, post_file, post_files, post_get_file, post_get_files
+get_file, get_files, get_file_commensts, get_files_comments, post_file, post_files, post_get_file, post_get_files
 
 urls:
-get_url, get_urls, post_url, post_urls, post_get_url, post_get_urls
+get_url, get_urls, get_url_commensts, get_urls_comments, post_url, post_urls, post_get_url, post_get_urls
 
 both:
-post_rescan, post_rescans, post_comment
+post_rescan, post_rescans, post_comment, post_comments, 
 ```
 
 **vt_key**:  This argument is used to specify the VirusTotal API key.
 
-**file**:  This argument is used to specify a list of file paths to scan.
+**--file**:  This argument is used to specify a list of file paths to scan.
 
-**password**:  This argument is used to specify an optional file password for files that have been password protected.
+**--password**:  This argument is used to specify an optional file password for files that have been password protected.
 
-**url**:  This argument is used to specify a list of URLs to scan.
+**--url**:  This argument is used to specify a list of URLs to scan.
 
-**comment**: This is an optinal argumant that allows to add a comment on scaned URLs/Files
+**--comment**: an optinal argumant that allows to add a comment on scaned URL/File # one
+
+**--comments**: an optinal argumant that allows to add a comments on scaned URLs/Files # many
+
+**--limit**: an argumant that specitys the limited amount of comments to retrive 
+
+**--cursor**: marker that is used to keep track of a specific position within a dataset or resultset
 
 ```bash
-The program will take in url/s or file/s as input and return the scan results from the VirusTotal database created
+The program will take in url/s or file/s as input and return the scan results from the VirusTotal database created 
 by: liav tausi
 
 positional arguments:
@@ -71,6 +79,10 @@ options:
   --password [PASSWORD]
                         optional file password
   --comment [COMMENT]   a comment for URL/file
+  --comments COMMENTS [COMMENTS ...]
+                        a comment for URL/file
+  --limit [LIMIT]       limit for retried comments
+  --cursor [CURSOR]     cursor for retried comments
   ```
 
 
