@@ -68,13 +68,24 @@ class RescanError(VTAutomatorError):
         super().__init__("Not in cache, send a post request.")
 
 
-class CommentError(VTAutomatorError):
+class NotInCacheError(VTAutomatorError):
     def __init__(self):
         super().__init__("Not in cache, send a post request.")
+
 
 class NoCommentsError(VTAutomatorError):
     def __init__(self):
         super().__init__("No comments.")
+
+
+class VerdictError(VTAutomatorError):
+    def __init__(self):
+        super().__init__("verdict must be either harmless or malicious.")
+
+class VoteError(VTAutomatorError):
+    def __init__(self):
+        super().__init__("User all ready voted.")
+
 
 class IdenticalCommentExistError(VTAutomatorError):
     def __init__(self):
