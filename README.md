@@ -66,7 +66,7 @@ post_rescan, post_rescans, post_comment, post_comments, post_vote
 
 
 ```bash
-The program will take in url/s or file/s as input and return the scan results from the VirusTotal database created 
+The program will take in url/s or file/s as input and return the scan results from the VirusTotal database 
 by: liav tausi
 
 positional arguments:
