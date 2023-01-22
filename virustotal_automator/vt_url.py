@@ -101,7 +101,7 @@ class VTUrl(VTAutomator):
 
 
     def _post_req_url(self, _url: str, _id: str = None, rescan: bool = None,
-                      comment: str = None) -> dict[str, dict]:
+                      comment: str = None, verdict: str = None) -> dict[str, dict]:
         """
         sends a POST request to a specific URL and returns the response in the form of a dictionary.
         raises exceptions if the request fails or returns empty content.
@@ -113,7 +113,7 @@ class VTUrl(VTAutomator):
             self.set_limit_counters()
 
             # regular post request
-            if (_id is None or len(_id) < 50) or (not rescan and not comment):
+            if (_id is None or len(_id) < 50) or not (rescan or comment or verdict):
                 payload: str | dict | None = f"url={_url}"
                 headers: dict = {
                     "accept": "application/json",
@@ -145,10 +145,25 @@ class VTUrl(VTAutomator):
                 }}
                 api = self.post_vt_api_url_add_comment + _id + '/comments'
 
+            # whether if vote
+            if verdict:
+                headers: dict = {
+                    "accept": "application/json",
+                    "x-apikey": self.vt_key,
+                    "content-type": "application/json"
+                }
+                payload = {"data": {
+                    "type": "vote",
+                    "attributes": {"verdict": verdict}
+                }}
+                api = self.post_vt_url_add_vote + _id + '/votes'
+
             # API request
-            if comment:
+            if comment or verdict:
                 # for adding a comment
                 req = requests.post(url=api, json=payload, headers=headers)
+                if req.status_code == 400:
+                    raise vt_exceptions.VoteError()
                 if req.status_code == 409:
                     raise vt_exceptions.IdenticalCommentExistError()
             else:
@@ -253,7 +268,7 @@ class VTUrl(VTAutomator):
             except IndexError:
                 raise vt_exceptions.NoCommentsError()
         else:
-            raise vt_exceptions.CommentError()
+            raise vt_exceptions.NotInCacheError()
 
 
     def get_urls_comments(self, limit: int, cursor: str = None) -> list[list, ...]:
@@ -369,7 +384,7 @@ class VTUrl(VTAutomator):
             else:
                 raise vt_exceptions.UrlNotFoundError()
         else:
-            raise vt_exceptions.CommentError()
+            raise vt_exceptions.NotInCacheError()
 
 
 
@@ -387,15 +402,31 @@ class VTUrl(VTAutomator):
         if len(results) == len(comments):
             return True, len(results)
         else:
-            raise vt_exceptions.CommentError()
+            raise vt_exceptions.NotInCacheError()
 
+
+    def post_vote(self, verdict: str, _url = None) -> True:
+        if verdict not in ['malicious', 'harmless']:
+            raise vt_exceptions.VerdictError()
+
+        if _url is None:
+            _url = self.url[0]
+        if _url in self.cache_url_dict:
+            _id: str = self.cache_url_dict[_url]['data']['id']
+            rep: str = self._post_req_url(_url, _id=_id ,verdict=verdict).get('data')['type']
+            if rep == 'vote':
+                return True
+            else:
+                raise vt_exceptions.UrlNotFoundError()
+        else:
+            raise vt_exceptions.NotInCacheError()
 
 
 
     def post_get_url(self, _url: str = None) -> tuple[str, int]:
         """
         used to both upload and retrieve the scan results of an url.
-        It starts by uploading the url to VirusTotal API by calling the post_file function.
+        It starts by uploading the url to VirusTotal API by calling the post_url function.
         It iterates over the url(s) and calls the _gets_a_url function to get the scan results of the url.
         :param _url: an url
         :return: tuple[str, int]
