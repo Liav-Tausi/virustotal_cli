@@ -406,6 +406,12 @@ class VTUrl(VTAutomator):
 
 
     def post_vote(self, verdict: str, _url = None) -> True:
+        """
+        This function allows for voting on a URL's verdict, with the options being "malicious" or "harmless."
+        :param verdict:
+        :param _url:
+        :return: True
+        """
         if verdict not in ['malicious', 'harmless']:
             raise vt_exceptions.VerdictError()
 
