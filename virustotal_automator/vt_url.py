@@ -59,7 +59,7 @@ class VTUrl(VTAutomator):
 
 
 
-    def _get_req_url(self, _url) -> dict[str, dict]:
+    def _get_req_url(self, _url: str, _id: str = None, limit: int = None, cursor: str = None) -> dict[str, dict]:
         """
         sends a GET request to a specific URL and returns the response in the form of a dictionary.
         It uses the urls base64 hash as the identifier.
@@ -74,13 +74,23 @@ class VTUrl(VTAutomator):
                 "accept": "application/json",
                 "x-apikey": self.vt_key
             }
+            if (_id is None or len(_id) < 50) or not limit:
+                url_id: str = base64.urlsafe_b64encode(f'{_url}'.encode()).decode().strip('=')
+                api = self.get_vt_api_url + url_id
+
+            if limit and _id:
+                if cursor:
+                    ret = '/comments' + f'?limit={limit}'  + f'&cursor={cursor}'
+                else:
+                    ret = '/comments' + f'?limit={limit}'
+                api = self.get_vt_api_url_ret_comment + _id + ret
+
             # API request
-            url_id: str = base64.urlsafe_b64encode(f'{_url}'.encode()).decode().strip('=')
-            req = requests.get(url=self.get_vt_api_url + url_id, headers=headers)
+            req = requests.get(url=api, headers=headers)
 
             if req.status_code >= 400:
                 raise vt_exceptions.RequestFailed()
-            elif bool(req.json()):
+            elif req.json():
                 # return dict[str, dict]
                 return req.json()
             else:
@@ -90,7 +100,8 @@ class VTUrl(VTAutomator):
 
 
 
-    def _post_req_url(self, _url: str, _id: str = None, rescan: bool = None, comment: str = None) -> dict[str, dict]:
+    def _post_req_url(self, _url: str, _id: str = None, rescan: bool = None,
+                      comment: str = None) -> dict[str, dict]:
         """
         sends a POST request to a specific URL and returns the response in the form of a dictionary.
         raises exceptions if the request fails or returns empty content.
@@ -137,15 +148,15 @@ class VTUrl(VTAutomator):
             # API request
             if comment:
                 # for adding a comment
-                req = requests.post(api, json=payload, headers=headers)
+                req = requests.post(url=api, json=payload, headers=headers)
                 if req.status_code == 409:
                     raise vt_exceptions.IdenticalCommentExistError()
             else:
                 # all other requests
-                req = requests.post(api, data=payload, headers=headers)
+                req = requests.post(url=api, data=payload, headers=headers)
             if req.status_code >= 400:
                 raise vt_exceptions.RequestFailed()
-            if bool(req.json()):
+            if req.json():
                 # return dict[str, dict]
                 return req.json()
             else:
@@ -168,6 +179,7 @@ class VTUrl(VTAutomator):
             return rep
         else:
             raise vt_exceptions.UrlNotFoundError()
+
 
 
     def get_url(self) -> tuple[str, int]:
@@ -197,6 +209,68 @@ class VTUrl(VTAutomator):
         else:
             vt_exceptions.UrlNotFoundError()
 
+
+
+    def get_url_comments(self, limit: int = None, cursor: str = None, comment_url_limit: tuple[str, int, str | None] = None,
+                    return_cursor: bool = None) -> list[str]:
+        """
+        function dedicated for adding a comment on a scanned url
+        force virustotal for analysis
+        :param return_cursor: if dev wants cursor
+        :param cursor: continuation cursor
+        :param limit: limit of comments to retrieve
+        :param comment_url_limit: if many
+        :return: list[str]
+        """
+        if comment_url_limit:
+            _cursor = comment_url_limit[2]
+            _limit = comment_url_limit[1]
+            _url = comment_url_limit[0]
+        else:
+            _url = self.url[0]
+            _limit = limit
+            _cursor = cursor
+
+        if _url in self.cache_url_dict:
+            _id: str = self.cache_url_dict[_url]['data']['id']
+            rep: dict = self._get_req_url(_url, _id=_id, limit=_limit, cursor=_cursor)
+            try:
+                if rep.get('data')[0]['type'] == 'comment':
+                    comments: list = list()
+                    for index in range(int(_limit)):
+                        try:
+                            for data in rep.get('data')[index]['attributes']:
+                                if data == 'text':
+                                    comments.append(rep.get('data')[index]['attributes']['text'])
+                        except IndexError:
+                            return comments
+                    return comments
+
+                elif (len(rep) < 10) and return_cursor is None:
+                    return rep.get('meta')['cursor']
+                else:
+                    raise vt_exceptions.UrlNotFoundError()
+            except IndexError:
+                raise vt_exceptions.NoCommentsError()
+        else:
+            raise vt_exceptions.CommentError()
+
+
+    def get_urls_comments(self, limit: int, cursor: str = None) -> list[list, ...]:
+        """
+        function dedicated for adding a comments on a scanned urls
+        force virustotal for analysis
+        :param cursor: continuation cursor
+        :param limit: limit of comments to retrieve
+        :return: list[list, ...]
+        """
+        results = []
+        with ThreadPoolExecutor(self.workers) as executor:
+            url_limit_cursor_tuples = [(url, limit, cursor) for url in self.url]
+            for data in url_limit_cursor_tuples:
+                post_with_args = partial(self.get_url_comments, comment_url_limit=data)
+                results.append(list(executor.map(post_with_args, url_limit_cursor_tuples))[0])
+        return results
 
 
     def post_url(self, _url = None) -> True:
@@ -271,7 +345,8 @@ class VTUrl(VTAutomator):
             raise vt_exceptions.RescanError()
 
 
-    def post_comment(self, comment = None, comment_url: tuple[str, str] = None) -> True:
+
+    def post_url_comment(self, comment = None, comment_url: tuple[str, str] = None) -> True:
         """
         function dedicated for adding a comment on a scanned url
         force virustotal for analysis
@@ -297,22 +372,23 @@ class VTUrl(VTAutomator):
             raise vt_exceptions.CommentError()
 
 
-    def post_comments(self, comments: tuple[str, ...]) -> tuple[bool, int]:
+
+    def post_urls_comments(self, comments: tuple[str, ...]) -> tuple[bool, int]:
         """
         function dedicated for adding a comments on a scanned urls
         force virustotal for analysis
         :param comments: tuple of str comments
         :return: True
         """
-        results = []
         with ThreadPoolExecutor(self.workers) as executor:
             comment_url_tuples = [(comment, url) for comment, url in zip(comments, self.url)]
-            post_comment_with_args = partial(self.post_comment, self)
+            post_comment_with_args = partial(self.post_url_comment, self)
             results = list(executor.map(post_comment_with_args, comment_url_tuples))
         if len(results) == len(comments):
             return True, len(results)
         else:
             raise vt_exceptions.CommentError()
+
 
 
 
