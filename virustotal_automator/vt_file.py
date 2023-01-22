@@ -427,6 +427,12 @@ class VTFile(VTAutomator):
 
 
     def post_vote(self, verdict: str, _file = None) -> True:
+        """
+          This function allows for voting on a File's verdict, with the options being "malicious" or "harmless."
+          :param verdict:
+          :param _file:
+          :return: True
+          """
         if verdict not in ['malicious', 'harmless']:
             raise vt_exceptions.VerdictError()
 
