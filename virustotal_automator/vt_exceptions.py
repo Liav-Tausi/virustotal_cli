@@ -97,9 +97,14 @@ class UrlNotFoundError(VTAutomatorError):
         super().__init__("Url not found, send a post request.")
 
 
+class NoVoteError(VTAutomatorError):
+    def __init__(self):
+        super().__init__("No votes found")
+
 class VtFileNotFoundError(VTAutomatorError):
     def __init__(self):
         super().__init__("File not found, send a post request.")
+
 
 
 class CacheExpiredError(VTAutomatorError):
