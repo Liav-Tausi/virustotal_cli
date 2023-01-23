@@ -8,6 +8,7 @@ import base64
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
+from typing import Any
 
 import requests
 import validators
@@ -59,7 +60,7 @@ class VTUrl(VTAutomator):
 
 
 
-    def _get_req_url(self, _url: str, _id: str = None, limit: int = None, cursor: str = None) -> dict[str, dict]:
+    def _get_req_url(self, _url: str, _id: str = None, limit: int = None, cursor: str = None, verdict: bool = False) -> dict[str, dict]:
         """
         sends a GET request to a specific URL and returns the response in the form of a dictionary.
         It uses the urls base64 hash as the identifier.
@@ -74,20 +75,33 @@ class VTUrl(VTAutomator):
                 "accept": "application/json",
                 "x-apikey": self.vt_key
             }
+            # regular get request
             if (_id is None or len(_id) < 50) or not limit:
                 url_id: str = base64.urlsafe_b64encode(f'{_url}'.encode()).decode().strip('=')
                 api = self.get_vt_api_url + url_id
 
-            if limit and _id:
+            # whether comment
+            if (limit and _id) and not verdict:
                 if cursor:
-                    ret = '/comments' + f'?limit={limit}'  + f'&cursor={cursor}'
+                    ret = '/comments' + f'?limit={limit}' + f'&cursor={cursor}'
                 else:
                     ret = '/comments' + f'?limit={limit}'
                 api = self.get_vt_api_url_ret_comment + _id + ret
 
+            # whether vote
+            if verdict:
+                if cursor and limit:
+                    ret = '/votes' + f'?limit={limit}' + f'&cursor={cursor}'
+                elif limit:
+                    ret = '/votes' + f'?limit={limit}'
+                elif cursor:
+                    ret = '/votes' + f'&cursor={cursor}'
+                else:
+                    ret = '/votes'
+                api = self.get_vt_url_ret_vote + _id + ret
+
             # API request
             req = requests.get(url=api, headers=headers)
-
             if req.status_code >= 400:
                 raise vt_exceptions.RequestFailed()
             elif req.json():
@@ -237,7 +251,9 @@ class VTUrl(VTAutomator):
         :param comment_url_limit: if many
         :return: list[str]
         """
-        if comment_url_limit:
+        try:
+            return_cursor = comment_url_limit[3]
+        except IndexError:
             _cursor = comment_url_limit[2]
             _limit = comment_url_limit[1]
             _url = comment_url_limit[0]
@@ -250,7 +266,9 @@ class VTUrl(VTAutomator):
             _id: str = self.cache_url_dict[_url]['data']['id']
             rep: dict = self._get_req_url(_url, _id=_id, limit=_limit, cursor=_cursor)
             try:
-                if rep.get('data')[0]['type'] == 'comment':
+                if return_cursor:
+                    return rep.get('meta')['cursor']
+                elif rep.get('data')[0]['type'] == 'comment':
                     comments: list = list()
                     for index in range(int(_limit)):
                         try:
@@ -261,8 +279,6 @@ class VTUrl(VTAutomator):
                             return comments
                     return comments
 
-                elif (len(rep) < 10) and return_cursor is None:
-                    return rep.get('meta')['cursor']
                 else:
                     raise vt_exceptions.UrlNotFoundError()
             except IndexError:
@@ -285,6 +301,71 @@ class VTUrl(VTAutomator):
             for data in url_limit_cursor_tuples:
                 post_with_args = partial(self.get_url_comments, comment_url_limit=data)
                 results.append(list(executor.map(post_with_args, url_limit_cursor_tuples))[0])
+        return results
+
+
+
+    def get_url_votes(self, limit: int = 1 ,_url: str = None, cursor: str = None, return_cursor: bool = False,
+                      vote_url_limit: tuple[str, int, str | None] = None) -> list | Any:
+        """
+        This function allows getting your vote on a URL
+        :param vote_url_limit: if many
+        :param return_cursor: if dev wants cursor
+        :param cursor: continuation cursor
+        :param limit: limit of votes to retrieve
+        :param _url: url
+        :return: dict[str]
+
+        """
+        try:
+            return_cursor = vote_url_limit[3]
+        except IndexError:
+            _cursor = vote_url_limit[2]
+            _limit = vote_url_limit[1]
+            _url = vote_url_limit[0]
+        else:
+            _url = self.url[0]
+            _limit = limit
+            _cursor = cursor
+
+        if _url in self.cache_url_dict:
+            _id: str = self.cache_url_dict[_url]['data']['id']
+            rep: dict = self._get_req_url(_url, _id=_id, limit=_limit, cursor=_cursor, verdict=True)
+            try:
+                if return_cursor:
+                    return rep.get('meta')['cursor']
+                elif rep.get('data')[0]['type'] == 'vote':
+                    votes: list = list()
+                    for index in range(int(_limit)):
+                        try:
+                            for data in rep.get('data')[index]['attributes']:
+                                if data == 'verdict':
+                                    votes.append(rep.get('data')[index]['attributes']['verdict'])
+                        except IndexError:
+                            return votes
+                    return votes
+                else:
+                    raise vt_exceptions.UrlNotFoundError()
+            except IndexError:
+                raise vt_exceptions.NoVoteError()
+        else:
+            raise vt_exceptions.NotInCacheError()
+
+
+    def get_urls_votes(self, limit: int = 1, cursor: str = None) -> list[list, ...]:
+        """
+        function dedicated for adding a comments on a scanned urls
+        force virustotal for analysis
+        :param cursor: continuation cursor
+        :param limit: limit of comments to retrieve
+        :return: list[list, ...]
+        """
+        results = []
+        with ThreadPoolExecutor(self.workers) as executor:
+            url_limit_cursor_tuples = [(url, limit, cursor) for url in self.url]
+            for data in url_limit_cursor_tuples:
+                get_with_args = partial(self.get_url_votes, vote_url_limit=data)
+                results.append(list(executor.map(get_with_args, url_limit_cursor_tuples))[0])
         return results
 
 
@@ -405,26 +486,53 @@ class VTUrl(VTAutomator):
             raise vt_exceptions.NotInCacheError()
 
 
-    def post_vote(self, verdict: str, _url = None) -> True:
+    def post_url_vote(self, verdict: str = None, verdict_url: tuple[str, str] = None) -> True:
         """
-        This function allows for voting on a URL's verdict, with the options being "malicious" or "harmless."
-        :param verdict:
-        :param _url:
-        :return: True
+          This function allows for voting on a URL's verdict, with the options being "malicious" or "harmless."
+          :param verdict_url: if many
+          :param verdict: vote
+          :return: True
+          """
+        if verdict_url:
+            _url = verdict_url[1]
+            _verdict = verdict_url[0]
+        else:
+            _url = self.url[0]
+            _verdict = verdict
 
-        """
-        if verdict not in ['malicious', 'harmless']:
+        if _verdict not in ['malicious', 'harmless']:
             raise vt_exceptions.VerdictError()
 
         if _url is None:
-            _url = self.url[0]
+            _url= self.url[0]
         if _url in self.cache_url_dict:
             _id: str = self.cache_url_dict[_url]['data']['id']
-            rep: str = self._post_req_url(_url, _id=_id ,verdict=verdict).get('data')['type']
+            try:
+                rep: str = self._post_req_url(_url, _id=_id, verdict=_verdict).get('data')['type']
+            except vt_exceptions.IdenticalCommentExistError:
+                raise vt_exceptions.VoteError()
             if rep == 'vote':
                 return True
             else:
                 raise vt_exceptions.UrlNotFoundError()
+        else:
+            raise vt_exceptions.NotInCacheError()
+
+
+    def post_urls_votes(self, verdicts: tuple[str, ...]) -> tuple[bool, int]:
+        """
+        This function allows for voting on a URL's verdict, with the options being "malicious" or "harmless."
+        :param verdicts: votes, "malicious" or "harmless"
+        :return: True, amount of votes
+        """
+        with ThreadPoolExecutor(self.workers) as executor:
+            votes_url_tuples = [(vote, url) for vote, url in zip(verdicts, self.url)]
+            results = []
+            for data in votes_url_tuples:
+                post_vote_with_args = partial(self.post_url_vote, verdict_url=data)
+                results.append(executor.submit(post_vote_with_args))
+        if len(results) == len(verdicts):
+            return True, len(results)
         else:
             raise vt_exceptions.NotInCacheError()
 
