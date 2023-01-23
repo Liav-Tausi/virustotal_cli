@@ -36,21 +36,21 @@ used for scanning URLs. It also inherits from the VTAutomator class and includes
 **method**:  This argument is used to specify the method of scan, such as 
 
  ```python 
-files: 
+Files:
 #post:
 post_file, post_files, post_file_comment ,post_files_comments, post_file_vote, post_files_votes, post_get_file, post_get_files
 
 #get:
 get_file, get_files, get_file_commensts, get_files_comments, get_file_vote, get_files_votes
 
-urls:
+URLs:
 #post:
 post_url, post_urls, post_url_comment ,post_urls_comments, post_url_vote, post_urls_votes, post_get_url, post_get_urls
 
 #get:
 get_url, get_urls, get_url_commensts, get_urls_comments, get_url_vote, get_urs_votes
 
-both:
+Both:
 #post:
 post_rescan, post_rescans
 ```
