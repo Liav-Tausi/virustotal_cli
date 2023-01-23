@@ -50,6 +50,7 @@ class VTAutomator(ABC):
 
     # ___url_votes___ #
     __POST_VT_URL_ADD_VOTE: str = r'https://www.virustotal.com/api/v3/urls/'
+    __GET_VT_URL_RET_VOTE: str = r'https://www.virustotal.com/api/v3/urls/'
 
     # _____file_____ #
     __GET_VT_API_FILE: str = r'https://www.virustotal.com/api/v3/files/'
@@ -61,6 +62,7 @@ class VTAutomator(ABC):
 
     # ___file_votes___ #
     __POST_VT_FILE_ADD_VOTE: str = r'https://www.virustotal.com/api/v3/files/'
+    __GET_VT_FILE_RET_VOTE: str = r'https://www.virustotal.com/api/v3/files/'
 
     def __init__(self, ref_cache_month: int = 1):
         """
@@ -169,8 +171,16 @@ class VTAutomator(ABC):
         return self.__POST_VT_URL_ADD_VOTE
 
     @property
+    def get_vt_url_ret_vote(self) -> str:
+        return self.__GET_VT_URL_RET_VOTE
+
+    @property
     def post_vt_file_add_vote(self) -> str:
         return self.__POST_VT_FILE_ADD_VOTE
+
+    @property
+    def get_vt_file_ret_vote(self) -> str:
+        return self.__GET_VT_FILE_RET_VOTE
 
     @property
     def get_vt_api_file(self) -> str:
