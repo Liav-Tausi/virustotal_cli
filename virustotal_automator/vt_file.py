@@ -10,6 +10,7 @@ import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
+from typing import Any
 
 import requests
 import vt_exceptions
@@ -67,7 +68,7 @@ class VTFile(VTAutomator):
         return self.__workers
 
 
-    def _get_req_file(self, _file, _id: str = None, limit: int = None, cursor: str = None) -> dict[str, dict]:
+    def _get_req_file(self, _file, _id: str = None, limit: int = None, cursor: str = None, vote: bool = False) -> dict[str, dict]:
         """
         sends a GET request to the VirusTotal API to retrieve information about a file.
         It uses the file's SHA256 hash as the identifier.
@@ -98,6 +99,17 @@ class VTFile(VTAutomator):
                 else:
                     ret = '/comments' + f'?limit={limit}'
                 api = self.get_vt_api_file_ret_comment + _id + ret
+
+            if vote:
+                if cursor and limit:
+                    ret = '/votes' + f'?limit={limit}' + f'&cursor={cursor}'
+                elif limit:
+                    ret = '/votes' + f'?limit={limit}'
+                elif cursor:
+                    ret = '/votes' + f'&cursor={cursor}'
+                else:
+                    ret = '/votes'
+                api = self.get_vt_file_ret_vote + _id + ret
 
             # API request
             req = requests.get(url=api, headers=headers)
@@ -253,7 +265,7 @@ class VTFile(VTAutomator):
 
 
     def get_file_comments(self, limit: int = None, cursor: str = None, comment_file_limit: tuple[str, int, str | None] = None,
-                    return_cursor: bool = None) -> list[str]:
+                    return_cursor: bool = False) -> list[str]:
         """
         function dedicated for adding a comment on a scanned file
         force virustotal for analysis
@@ -262,8 +274,11 @@ class VTFile(VTAutomator):
         :param limit: limit of comments to retrieve
         :param comment_file_limit: if many
         :return: list[str]
+
         """
-        if comment_file_limit:
+        try:
+            return_cursor = comment_file_limit[3]
+        except IndexError:
             _cursor = comment_file_limit[2]
             _limit = comment_file_limit[1]
             _file = comment_file_limit[0]
@@ -286,7 +301,7 @@ class VTFile(VTAutomator):
                         except IndexError:
                             return comments
                     return comments
-                elif (len(rep) < 10) and return_cursor is None:
+                elif (len(rep) < 10) and return_cursor:
                     return rep.get('meta')['cursor']
                 else:
                     raise vt_exceptions.VtFileNotFoundError()
@@ -310,6 +325,69 @@ class VTFile(VTAutomator):
             for data in file_limit_cursor_tuples:
                 post_with_args = partial(self.get_file_comments, comment_file_limit=data)
                 results.append(list(executor.map(post_with_args, file_limit_cursor_tuples))[0])
+        return results
+
+
+    def get_file_votes(self, limit: int = 1 ,_file: str = None, cursor: str = None, return_cursor: bool = False,
+                      vote_file_limit: tuple[str, int, str | None] = None) -> list | Any:
+        """
+        This function allows getting your vote on a file
+        :param vote_file_limit: if many
+        :param return_cursor: if dev wants cursor
+        :param cursor: continuation cursor
+        :param limit: limit of votes to retrieve
+        :param _file: file
+        :return: dict[str]
+
+        """
+        try:
+            return_cursor = vote_file_limit[3]
+        except IndexError:
+            _cursor = vote_file_limit[2]
+            _limit = vote_file_limit[1]
+            _file = vote_file_limit[0]
+        else:
+            _file = self.file[0]
+            _limit = limit
+            _cursor = cursor
+
+        if _file in self.cache_file_dict:
+            _id: str = self.cache_file_dict[_file]['data']['id']
+            rep: dict = self._get_req_file(_file, _id=_id, limit=_limit, cursor=_cursor, vote=True)
+            try:
+                if return_cursor:
+                    return rep.get('meta')['cursor']
+                elif rep.get('data')[0]['type'] == 'vote':
+                    votes: list = list()
+                    for index in range(int(_limit)):
+                        try:
+                            for data in rep.get('data')[index]['attributes']:
+                                if data == 'verdict':
+                                    votes.append(rep.get('data')[index]['attributes']['verdict'])
+                        except IndexError:
+                            return votes
+                    return votes
+                else:
+                    raise vt_exceptions.VtFileNotFoundError()
+            except IndexError:
+                raise vt_exceptions.NoVoteError()
+        else:
+            raise vt_exceptions.NotInCacheError()
+
+    def get_files_votes(self, limit: int = 1, cursor: str = None) -> list[list, ...]:
+        """
+        function dedicated for adding a comments on a scanned files
+        force virustotal for analysis
+        :param cursor: continuation cursor
+        :param limit: limit of comments to retrieve
+        :return: list[list, ...]
+        """
+        results = []
+        with ThreadPoolExecutor(self.workers) as executor:
+            file_limit_cursor_tuples = [(file, limit, cursor) for file in self.file]
+            for data in file_limit_cursor_tuples:
+                get_with_args = partial(self.get_file_votes, vote_file_limit=data)
+                results.append(list(executor.map(get_with_args, file_limit_cursor_tuples))[0])
         return results
 
 
@@ -426,25 +504,55 @@ class VTFile(VTAutomator):
             raise vt_exceptions.NotInCacheError()
 
 
-    def post_vote(self, verdict: str, _file = None) -> True:
+    def post_file_vote(self, verdict: str = None, verdict_file: tuple[str, str] = None) -> True:
         """
           This function allows for voting on a File's verdict, with the options being "malicious" or "harmless."
-          :param verdict:
-          :param _file:
+          :param verdict_file: if many
+          :param verdict: vote
+          :param file: file inserted
           :return: True
           """
-        if verdict not in ['malicious', 'harmless']:
+        if verdict_file:
+            _file = verdict_file[1]
+            _verdict = verdict_file[0]
+        else:
+            _file = self.file[0]
+            _verdict = verdict
+
+        if _verdict not in ['malicious', 'harmless']:
             raise vt_exceptions.VerdictError()
 
         if _file is None:
             _file = self.file[0]
         if _file in self.cache_file_dict:
             _id: str = self.cache_file_dict[_file]['data']['id']
-            rep: str = self._post_req_file(_file, _id=_id, verdict=verdict).get('data')['type']
+            try:
+                rep: str = self._post_req_file(_file, _id=_id, verdict=_verdict).get('data')['type']
+            except vt_exceptions.IdenticalCommentExistError:
+                raise vt_exceptions.VoteError()
             if rep == 'vote':
                 return True
             else:
                 raise vt_exceptions.VtFileNotFoundError()
+        else:
+            raise vt_exceptions.NotInCacheError()
+
+
+
+    def post_files_votes(self, verdicts: tuple[str, ...]) -> tuple[bool, int]:
+        """
+        This function allows for voting on a files' verdict, with the options being "malicious" or "harmless."
+        :param verdicts: votes, "malicious" or "harmless"
+        :return: True, amount of votes
+        """
+        with ThreadPoolExecutor(self.workers) as executor:
+            votes_file_tuples = [(vote, file) for vote, file in zip(verdicts, self.file)]
+            results = []
+            for data in votes_file_tuples:
+                post_vote_with_args = partial(self.post_file_vote, verdict_file=data)
+                results.append(executor.submit(post_vote_with_args))
+        if len(results) == len(verdicts):
+            return True, len(results)
         else:
             raise vt_exceptions.NotInCacheError()
 
