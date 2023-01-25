@@ -24,7 +24,7 @@ used for scanning URLs. It also inherits from the VTAutomator class and includes
 ### *CLI*
 ```bash
 [-h] [--workers WORKERS] (--file FILE [FILE ...] | --url URL [URL ...]) [--password [PASSWORD]] [--comment [COMMENT]] [--comments COMMENTS [COMMENTS ...]]
-                  [--limit [LIMIT]] [--cursor [CURSOR]] [--verdict [VERDICT]]
+                  [--limit [LIMIT]] [--cursor [CURSOR]] [--return_cursor [RETURN_CURSOR]] [--verdict [VERDICT]] [--verdicts VERDICTS [VERDICTS ...]]
                   type method vt_key
 ```
 
@@ -36,14 +36,23 @@ used for scanning URLs. It also inherits from the VTAutomator class and includes
 **method**:  This argument is used to specify the method of scan, such as 
 
  ```python 
-files: 
-get_file, get_files, get_file_commensts, get_files_comments, post_file, post_files, post_get_file, post_get_files
+Files:
+#post:
+post_file, post_files, post_file_comment ,post_files_comments, post_file_vote, post_files_votes, post_get_file, post_get_files
 
-urls:
-get_url, get_urls, get_url_commensts, get_urls_comments, post_url, post_urls, post_get_url, post_get_urls
+#get:
+get_file, get_files, get_file_commensts, get_files_comments, get_file_vote, get_files_votes
 
-both:
-post_rescan, post_rescans, post_comment, post_comments, post_vote
+URLs:
+#post:
+post_url, post_urls, post_url_comment ,post_urls_comments, post_url_vote, post_urls_votes, post_get_url, post_get_urls
+
+#get:
+get_url, get_urls, get_url_commensts, get_urls_comments, get_url_vote, get_urs_votes
+
+Both:
+#post:
+post_rescan, post_rescans
 ```
 
 **vt_key**:  This argument is used to specify the VirusTotal API key.
@@ -62,7 +71,11 @@ post_rescan, post_rescans, post_comment, post_comments, post_vote
 
 **--cursor**: marker that is used to keep track of a specific position within a dataset or resultset
 
-**--verdict**: an optinal argumant for vote methed, "harmless" or "malicious"
+**--return_cursor**: if dev whants the cursor of comments, votes
+
+**--verdict**: an optinal argumant for vote metheds, "harmless" or "malicious"
+
+**--verdicts**: an argumant for multiple votes metheds, "harmless" or "malicious"
 
 
 ```bash
@@ -87,9 +100,13 @@ options:
                         a comment for URL/file
   --limit [LIMIT]       limit for retried comments
   --cursor [CURSOR]     cursor for retried comments
+  --return_cursor [RETURN_CURSOR]
+                        returns cursor of request
   --verdict [VERDICT]   vote for "harmless" or "malicious"
+  --verdicts VERDICTS [VERDICTS ...]
+                        votes for "harmless" or "malicious"
 
   ```
 
-
+* note that this program uses multithreading, it is also thread safe
 
