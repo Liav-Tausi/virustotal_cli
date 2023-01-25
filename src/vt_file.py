@@ -50,7 +50,6 @@ class VTFile(VTAutomator):
         self.__workers: int = workers
 
 
-
     @property
     def file(self) -> tuple[str, ...]:
         return self.__file
@@ -68,7 +67,7 @@ class VTFile(VTAutomator):
         return self.__workers
 
 
-    def _get_req_file(self, _file, _id: str = None, limit: int = None, cursor: str = None, vote: bool = False) -> dict[str, dict]:
+    def _get_req(self, _file, _id: str = None, limit: int = None, cursor: str = None, vote: bool = False) -> dict[str, dict]:
         """
         sends a GET request to the VirusTotal API to retrieve information about a file.
         It uses the file's SHA256 hash as the identifier.
@@ -126,7 +125,7 @@ class VTFile(VTAutomator):
 
 
 
-    def _post_req_file(self, _file, _id: str = False, rescan: bool = False, comment: str = False,
+    def _post_req(self, _file, _id: str = False, rescan: bool = False, comment: str = False,
                        verdict: str = None) -> dict[str, dict]:
         """
         sends a POST request to the VirusTotal API to upload a file for scanning.
@@ -224,7 +223,7 @@ class VTFile(VTAutomator):
     def _gets_a_file(self) -> int:
         """
         decorator function that retrieves the file information from the cache if it exists,
-        otherwise it calls the _get_req_file function to get the information from the API.
+        otherwise it calls the _get_req function to get the information from the API.
         :return: int
 
         """
@@ -289,7 +288,7 @@ class VTFile(VTAutomator):
 
         if _file in self.cache_file_dict:
             _id: str = self.cache_file_dict[_file]['data']['id']
-            rep: dict = self._get_req_file(_file, _id=_id, limit=_limit, cursor=_cursor)
+            rep: dict = self._get_req(_file, _id=_id, limit=_limit, cursor=_cursor)
             try:
                 if rep.get('data')[0]['type'] == 'comment':
                     comments: list = list()
@@ -353,7 +352,7 @@ class VTFile(VTAutomator):
 
         if _file in self.cache_file_dict:
             _id: str = self.cache_file_dict[_file]['data']['id']
-            rep: dict = self._get_req_file(_file, _id=_id, limit=_limit, cursor=_cursor, vote=True)
+            rep: dict = self._get_req(_file, _id=_id, limit=_limit, cursor=_cursor, vote=True)
             try:
                 if return_cursor:
                     return rep.get('meta')['cursor']
@@ -373,6 +372,7 @@ class VTFile(VTAutomator):
                 raise vt_exceptions.NoVoteError()
         else:
             raise vt_exceptions.NotInCacheError()
+
 
     def get_files_votes(self, limit: int = 1, cursor: str = None) -> list[list, ...]:
         """
@@ -399,7 +399,7 @@ class VTFile(VTAutomator):
         """
         if _file is None:
             _file = self.file[0]
-        rep: str = self._post_req_file(_file).get('data')['type']
+        rep: str = self._post_req(_file).get('data')['type']
         if rep == 'analysis':
             return True
         else:
@@ -435,7 +435,7 @@ class VTFile(VTAutomator):
             _file = self.file[0]
         if _file in self.cache_file_dict:
             _id: str = self.cache_file_dict[_file]['data']['id']
-            rep: str = self._post_req_file(_file, _id = _id).get('data')['type']
+            rep: str = self._post_req(_file, _id = _id).get('data')['type']
             if rep == 'analysis':
                 return True
             else:
@@ -478,7 +478,7 @@ class VTFile(VTAutomator):
 
         if _file in self.cache_file_dict:
             _id: str = self.cache_file_dict[_file]['data']['id']
-            rep: str = self._post_req_file(_file, _id=_id, comment=_comment).get('data')['type']
+            rep: str = self._post_req(_file, _id=_id, comment=_comment).get('data')['type']
             if rep == 'comment':
                 return True
             else:
@@ -526,7 +526,7 @@ class VTFile(VTAutomator):
         if _file in self.cache_file_dict:
             _id: str = self.cache_file_dict[_file]['data']['id']
             try:
-                rep: str = self._post_req_file(_file, _id=_id, verdict=_verdict).get('data')['type']
+                rep: str = self._post_req(_file, _id=_id, verdict=_verdict).get('data')['type']
             except vt_exceptions.IdenticalCommentExistError:
                 raise vt_exceptions.VoteError()
             if rep == 'vote':
@@ -596,10 +596,3 @@ class VTFile(VTAutomator):
         else:
             raise vt_exceptions.VtFileNotFoundError()
 
-
-
-    def _get_req_url(self, _url):
-        pass
-
-    def _post_req_url(self, _url):
-        pass
