@@ -509,7 +509,6 @@ class VTFile(VTAutomator):
           This function allows for voting on a File's verdict, with the options being "malicious" or "harmless."
           :param verdict_file: if many
           :param verdict: vote
-          :param file: file inserted
           :return: True
           """
         if verdict_file:
