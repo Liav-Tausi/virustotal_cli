@@ -60,7 +60,7 @@ class VTUrl(VTAutomator):
 
 
 
-    def _get_req_url(self, _url: str, _id: str = None, limit: int = None, cursor: str = None, verdict: bool = False) -> dict[str, dict]:
+    def _get_req(self, _url: str, _id: str = None, limit: int = None, cursor: str = None, verdict: bool = False) -> dict[str, dict]:
         """
         sends a GET request to a specific URL and returns the response in the form of a dictionary.
         It uses the urls base64 hash as the identifier.
@@ -114,7 +114,7 @@ class VTUrl(VTAutomator):
 
 
 
-    def _post_req_url(self, _url: str, _id: str = None, rescan: bool = None,
+    def _post_req(self, _url: str, _id: str = None, rescan: bool = None,
                       comment: str = None, verdict: str = None) -> dict[str, dict]:
         """
         sends a POST request to a specific URL and returns the response in the form of a dictionary.
@@ -199,7 +199,7 @@ class VTUrl(VTAutomator):
     def _gets_a_url(self) -> int:
         """
         decorator function that retrieves the url information from the cache if it exists,
-        otherwise it calls the _get_req_url function to get the information from the API.
+        otherwise it calls the _get_req function to get the information from the API.
         :return: int
 
         """
@@ -264,7 +264,7 @@ class VTUrl(VTAutomator):
 
         if _url in self.cache_url_dict:
             _id: str = self.cache_url_dict[_url]['data']['id']
-            rep: dict = self._get_req_url(_url, _id=_id, limit=_limit, cursor=_cursor)
+            rep: dict = self._get_req(_url, _id=_id, limit=_limit, cursor=_cursor)
             try:
                 if return_cursor:
                     return rep.get('meta')['cursor']
@@ -330,7 +330,7 @@ class VTUrl(VTAutomator):
 
         if _url in self.cache_url_dict:
             _id: str = self.cache_url_dict[_url]['data']['id']
-            rep: dict = self._get_req_url(_url, _id=_id, limit=_limit, cursor=_cursor, verdict=True)
+            rep: dict = self._get_req(_url, _id=_id, limit=_limit, cursor=_cursor, verdict=True)
             try:
                 if return_cursor:
                     return rep.get('meta')['cursor']
@@ -377,7 +377,7 @@ class VTUrl(VTAutomator):
         """
         if _url is None:
             _url = self.url[0]
-        rep: str = self._post_req_url(_url).get('data')['type']
+        rep: str = self._post_req(_url).get('data')['type']
         if rep == 'analysis':
              return True
         else:
@@ -414,7 +414,7 @@ class VTUrl(VTAutomator):
             _url = self.url[0]
         if _url in self.cache_url_dict:
             _id: str = self.cache_url_dict[_url]['data']['id']
-            rep: str = self._post_req_url(_url, _id=_id).get('data')['type']
+            rep: str = self._post_req(_url, _id=_id).get('data')['type']
             if rep == 'analysis':
                 return True
             else:
@@ -459,7 +459,7 @@ class VTUrl(VTAutomator):
 
         if _url in self.cache_url_dict:
             _id: str = self.cache_url_dict[_url]['data']['id']
-            rep: str = self._post_req_url(_url, _id=_id, comment=_comment).get('data')['type']
+            rep: str = self._post_req(_url, _id=_id, comment=_comment).get('data')['type']
             if rep == 'comment':
                 return True
             else:
@@ -508,7 +508,7 @@ class VTUrl(VTAutomator):
         if _url in self.cache_url_dict:
             _id: str = self.cache_url_dict[_url]['data']['id']
             try:
-                rep: str = self._post_req_url(_url, _id=_id, verdict=_verdict).get('data')['type']
+                rep: str = self._post_req(_url, _id=_id, verdict=_verdict).get('data')['type']
             except vt_exceptions.IdenticalCommentExistError:
                 raise vt_exceptions.VoteError()
             if rep == 'vote':
@@ -577,13 +577,5 @@ class VTUrl(VTAutomator):
             return results
         else:
             raise vt_exceptions.UrlNotFoundError()
-
-
-
-    def _get_req_file(self, _file):
-        pass
-
-    def _post_req_file(self, _file):
-        pass
 
 
