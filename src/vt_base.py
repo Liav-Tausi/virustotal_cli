@@ -238,24 +238,14 @@ class VTAutomator(ABC):
     def cache_file_dict(self) -> dict:
         return self.__cache_file_dict
 
-    # _____abstractmethod_urls____ #
+    # _____abstractedness_____ #
 
     @abstractmethod
-    def _get_req_url(self, _url):
+    def _get_req(self, _url_file):
         pass
 
     @abstractmethod
-    def _post_req_url(self, _url):
-        pass
-
-    # _____abstractmethod_files____ #
-
-    @abstractmethod
-    def _get_req_file(self, _file):
-        pass
-
-    @abstractmethod
-    def _post_req_file(self, _file):
+    def _post_req(self, _url_file):
         pass
 
     # _____setters_____#
