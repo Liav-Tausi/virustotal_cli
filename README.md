@@ -108,5 +108,5 @@ options:
 
   ```
 
-
+* note that this program uses multithreading, it is also thread safe
 
