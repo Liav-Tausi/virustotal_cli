@@ -29,8 +29,7 @@ class VTUrl(VTAutomator):
         :param workers: int = 7 max thread workers
 
         """
-        self.set_api_key(vt_key)
-        super().__init__()
+        super().__init__(vt_key=vt_key)
         if not isinstance(workers, int):
             raise vt_exceptions.ThreadingError()
         self.__workers: int = workers
