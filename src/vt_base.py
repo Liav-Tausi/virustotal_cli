@@ -64,7 +64,7 @@ class VTAutomator(ABC):
     __POST_VT_FILE_ADD_VOTE: str = r'https://www.virustotal.com/api/v3/files/'
     __GET_VT_FILE_RET_VOTE: str = r'https://www.virustotal.com/api/v3/files/'
 
-    def __init__(self, ref_cache_month: int = 1):
+    def __init__(self, vt_key: str, ref_cache_month: int = 1):
         """
         this is an abstract base/father class for the ather class.
         it stores info and creates structured base.
@@ -76,7 +76,7 @@ class VTAutomator(ABC):
 
         # registering a save_data function to be called when the program exits
 
-        self.__api_key = self.api_key
+        self.__api_key: str = vt_key
         self._get_params()
 
         self.__requests_monthly_amount_limit = self.requests_monthly_amount_limit
@@ -274,10 +274,6 @@ class VTAutomator(ABC):
     def set_requests_hourly_amount_limit_counter(self, limit: int) -> None:
         self.__requests_hourly_amount_limit_counter = limit
 
-    def set_api_key(self, key: str = None) -> None:
-        if not is_letters_and_digits(key):
-            raise vt_exceptions.ApiKeyError()
-        self.__api_key = key
 
     # update counters
     def set_limit_counters(self) -> None:
