@@ -242,11 +242,11 @@ class VTAutomator(ABC):
 
     @abstractmethod
     def _get_req(self, _url_file):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def _post_req(self, _url_file):
-        pass
+        raise NotImplementedError()
 
     # _____setters_____#
 
