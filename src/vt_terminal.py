@@ -160,7 +160,7 @@ def main() -> tuple[str, int] | str | list[tuple]:
     parser = argparse.ArgumentParser(description="""The program will take in url/s or file/s as input 
                                                  and return the scan results from the VirusTotal database
                                                  created by: liav tausi""")
-    parser.add_argument('type', help='type of scan (file or url)')
+    parser.add_argument('type', choices=['url', 'file'], help='type of scan (file or url)')
     parser.add_argument('--workers', type=int, default=7, help='number of workers')
     parser.add_argument('method', help='method to run')
     parser.add_argument('vt_key', help='VirusTotal API key')
